@@ -25,4 +25,4 @@ if __name__ == '__main__':
     if len(sys.argv) < 3:
         print("Usage: python create_admin.py <username> <password>")
     else:
-        create_admin(sys.argv[1], sys.argv[2])
+        create_admin(sys.argv[1].lower(), sys.argv[2])

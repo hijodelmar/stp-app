@@ -18,7 +18,7 @@ def index():
 @role_required(['admin'])
 def add():
     if request.method == 'POST':
-        username = request.form.get('username')
+        username = request.form.get('username').lower()
         password = request.form.get('password')
         role = request.form.get('role')
         
@@ -40,7 +40,7 @@ def add():
 def edit(id):
     user = User.query.get_or_404(id)
     if request.method == 'POST':
-        user.username = request.form.get('username')
+        user.username = request.form.get('username').lower()
         user.role = request.form.get('role')
         
         password = request.form.get('password')
