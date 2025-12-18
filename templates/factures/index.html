@@ -1,147 +1,277 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Liste des Factures</h1>
-    <div>
-        <a href="{{ url_for('factures.choose_devis') }}" class="btn btn-success me-2"><i
-                class="fas fa-magic me-2"></i>Créer depuis Devis</a>
-        <a href="{{ url_for('factures.add') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Nouvelle Facture</a>
+<div class="row mb-4 align-items-center">
+    <div class="col-md-6">
+        <h2 class="fw-bold mb-0"><i class="fas fa-chart-line text-primary me-2"></i>Tableau de Bord</h2>
+        <p class="text-muted mb-0">Résumé financier : <span class="badge bg-primary">{{ stats.filter_label }}</span></p>
     </div>
-</div>
+    <div class="col-md-6 text-md-end mt-3 mt-md-0">
+        <form class="d-flex flex-wrap justify-content-md-end gap-2" method="GET" action="/">
+            <select name="year" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
+                <option value="">-- Par Année --</option>
+                {% for y in stats.available_years %}
+                <option value="{{ y }}" {% if stats.current_year==y %}selected{% endif %}>Année {{ y }}</option>
+                {% endfor %}
+            </select>
 
-<div class="card mb-4">
-    <div class="card-body">
-        <form action="{{ url_for('factures.index') }}" method="GET" class="d-flex">
-            <input class="form-control me-2" type="search" name="q" placeholder="Rechercher (Numéro, Client)"
-                aria-label="Search" value="{{ request.args.get('q', '') }}">
-            <button class="btn btn-outline-primary" type="submit">Rechercher</button>
-            {% if request.args.get('q') %}
-            <a href="{{ url_for('factures.index') }}" class="btn btn-outline-secondary ms-2" title="Effacer"><i
-                    class="fas fa-times"></i></a>
-            {% endif %}
+            <input type="date" name="start_date" class="form-control form-control-sm" style="width: auto;"
+                value="{{ stats.start_date or '' }}" placeholder="Du">
+            <input type="date" name="end_date" class="form-control form-control-sm" style="width: auto;"
+                value="{{ stats.end_date or '' }}" placeholder="Au">
+
+            <button type="submit" class="btn btn-primary btn-sm px-3">Filtrer</button>
+            <a href="{{ url_for('export_stats_pdf', year=stats.current_year, start_date=stats.start_date, end_date=stats.end_date) }}"
+                class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-file-pdf me-1"></i> PDF
+            </a>
+            <a href="/" class="btn btn-outline-secondary btn-sm"><i class="fas fa-sync-alt"></i></a>
         </form>
     </div>
 </div>
 
-<div class="card">
-    <div class="card-body">
-        {% if documents %}
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>Numéro</th>
-                        <th>Date</th>
-                        <th>Client</th>
-                        <th>Historique</th>
-                        <th>Statut</th>
-                        <th>Montants</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for doc in documents %}
-                    <tr>
-                        <td><span class="badge bg-success">{{ doc.numero }}</span></td>
-                        <td>{{ doc.date.strftime('%d/%m/%Y') }}</td>
-                        <td>{{ doc.client.raison_sociale }}</td>
-                        <td>
-                            <small class="d-block">Créé par: {{ doc.created_by.username if doc.created_by else 'Système'
-                                }}</small>
-                            <small class="text-muted">Dernière modif: {{ doc.updated_by.username if doc.updated_by else
-                                'Système' }} ({{ doc.updated_at.strftime('%d/%m/%y %H:%M') }})</small>
-                        </td>
-                        <td>
-                            {% if doc.source_document %}
-                            <span class="badge bg-light text-dark border">{{ doc.source_document.numero }}</span>
-                            {% else %}
-                            <span class="text-muted">-</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if doc.paid %}
-                            <span class="badge bg-success payment-status" data-id="{{ doc.id }}"
-                                style="cursor: pointer;" title="Double-cliquez pour changer"><i
-                                    class="fas fa-check-circle"></i> Réglée</span>
-                            {% else %}
-                            <span class="badge bg-warning text-dark payment-status" data-id="{{ doc.id }}"
-                                style="cursor: pointer;" title="Double-cliquez pour changer"><i
-                                    class="fas fa-clock"></i> Non réglée</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <small class="d-block text-muted">HT: {{ "%.2f"|format(doc.montant_ht) }} €</small>
-                            <div class="fw-bold fs-6">TTC: {{ "%.2f"|format(doc.montant_ttc) }} €</div>
-                        </td>
-                        <td>
-                            <a href="{{ url_for('documents.view_pdf', id=doc.id) }}"
-                                class="btn btn-sm btn-outline-info me-1" target="_blank"><i class="fas fa-file-pdf"></i>
-                                PDF</a>
-                            <a href="{{ url_for('factures.edit', id=doc.id) }}"
-                                class="btn btn-sm btn-outline-primary me-1" title="Modifier"><i
-                                    class="fas fa-edit"></i></a>
-                            <form action="{{ url_for('factures.delete', id=doc.id) }}" method="POST" class="d-inline"
-                                onsubmit="return confirm('Supprimer cette facture ?');">
-                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer"><i
-                                        class="fas fa-trash"></i></button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+<!-- Quick Action Buttons -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex flex-wrap gap-3">
+            <a href="{{ url_for('clients.add') }}"
+                class="btn px-4 py-2 shadow-sm d-flex align-items-center gap-2 fw-bold"
+                style="background-color: #002366; color: white; border: 2px solid #002366; border-radius: 8px; transition: all 0.3s ease;">
+                <i class="fas fa-user-plus"></i> Nouveau Client
+            </a>
+            <a href="{{ url_for('devis.add') }}" class="btn px-4 py-2 shadow-sm d-flex align-items-center gap-2 fw-bold"
+                style="background-color: #D4AF37; color: #002366; border: 2px solid #D4AF37; border-radius: 8px; transition: all 0.3s ease;">
+                <i class="fas fa-file-invoice"></i> Créer un Devis
+            </a>
         </div>
-        {% else %}
-        <p class="text-muted text-center py-4">Aucune facture enregistrée.</p>
-        {% endif %}
     </div>
 </div>
 
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="flex-shrink-0 p-2 rounded" style="background-color: #f8f9fa; color: #6c757d;">
+                        <i class="fas fa-euro-sign fa-lg"></i>
+                    </div>
+                    <div class="ms-3">
+                        <small class="text-muted d-block">Chiffre d'Affaires HT</small>
+                        <h4 class="mb-0 fw-bold">{{ "%.2f"|format(stats.total_ht) }} €</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="flex-shrink-0 p-2 rounded" style="background-color: #e3f2fd; color: #002366;">
+                        <i class="fas fa-wallet fa-lg"></i>
+                    </div>
+                    <div class="ms-3">
+                        <small class="text-muted d-block">CA TTC encaissé</small>
+                        <h4 class="mb-0 fw-bold" style="color: #002366;">{{ "%.2f"|format(stats.total_regle) }} €</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="flex-shrink-0 p-2 rounded" style="background-color: #fff9c4; color: #D4AF37;">
+                        <i class="fas fa-exclamation-circle fa-lg"></i>
+                    </div>
+                    <div class="ms-3">
+                        <small class="text-muted d-block">Total Impayé</small>
+                        <h4 class="mb-0 fw-bold" style="color: #D4AF37;">{{ "%.2f"|format(stats.total_impaye) }} €</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="flex-shrink-0 p-2 rounded" style="background-color: #e0f2f1; color: #00695c;">
+                        <i class="fas fa-percent fa-lg"></i>
+                    </div>
+                    <div class="ms-3">
+                        <small class="text-muted d-block">TVA Collectée</small>
+                        <h4 class="mb-0 fw-bold" style="color: #00695c;">{{ "%.2f"|format(stats.total_tva) }} €</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Chart CA Evolution -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0 fw-bold">Évolution du CA HT</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="caChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Payment Status -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0 fw-bold">Statut des Paiements</h5>
+            </div>
+            <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                <div style="max-width: 200px;">
+                    <canvas id="paymentChart"></canvas>
+                </div>
+                <div class="mt-4 w-100">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span>Réglé</span>
+                        <span class="fw-bold" style="color: #002366;">{{ "%.1f"|format((stats.total_regle /
+                            stats.total_ttc * 100)
+                            if stats.total_ttc > 0 else 0) }} %</span>
+                    </div>
+                    <div class="progress" style="height: 10px; background-color: #f1f1f1; border-radius: 5px;">
+                        <div class="progress-bar" role="progressbar"
+                            style="width: {{ (stats.total_regle / stats.total_ttc * 100) if stats.total_ttc > 0 else 0 }}%; background: linear-gradient(90deg, #002366, #D4AF37); border-radius: 5px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Top Clients Chart -->
+    <div class="col-lg-12 mt-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0 fw-bold">Top Clients (CA HT)</h5>
+            </div>
+            <div class="card-body">
+                <div style="height: 300px;">
+                    <canvas id="clientChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Add double-click handler to all payment status badges
-        document.querySelectorAll('.payment-status').forEach(function (badge) {
-            badge.addEventListener('dblclick', function () {
-                const docId = this.getAttribute('data-id');
-                const badge = this;
+    // Config Chart Évolution CA
+    const ctxCa = document.getElementById('caChart').getContext('2d');
+    new Chart(ctxCa, {
+        type: 'line',
+        data: {
+            labels: {{ stats.monthly_labels | tojson }},
+        datasets: [{
+            label: 'Chiffre d\'Affaires HT (€)',
+            data: {{ stats.monthly_data | tojson }},
+        borderColor: '#002366',
+        backgroundColor: 'rgba(0, 35, 102, 0.05)',
+        fill: true,
+        tension: 0.3,
+        borderWidth: 3,
+        pointRadius: 5,
+        pointBackgroundColor: '#D4AF37',
+        pointBorderColor: '#002366',
+        pointBorderWidth: 2
+            }]
+        },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { color: '#f8f9fa' }
+            },
+            x: {
+                grid: { display: false }
+            }
+        }
+    }
+    });
 
-                // Send AJAX request to toggle payment status
-                fetch(`/factures/toggle_paid/${docId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
+    // Config Chart Paiements
+    const ctxPay = document.getElementById('paymentChart').getContext('2d');
+    new Chart(ctxPay, {
+        type: 'doughnut',
+        data: {
+            labels: ['Réglé', 'Impayé'],
+            datasets: [{
+                data: [{{ stats.total_regle }}, {{ stats.total_impaye }}],
+        backgroundColor: ['#002366', '#D4AF37'],
+        hoverOffset: 15,
+        borderWidth: 0
+    }]
+        },
+        options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: { boxWidth: 15, padding: 25, usePointStyle: true }
+            }
+        },
+        cutout: '75%'
+    }
+    });
+
+    // Config Chart Clients
+    const ctxClient = document.getElementById('clientChart').getContext('2d');
+    new Chart(ctxClient, {
+        type: 'bar',
+        data: {
+            labels: {{ stats.client_labels | tojson }},
+        datasets: [{
+            label: 'Total Facturé HT (€)',
+            data: {{ stats.client_data | tojson }},
+        backgroundColor: '#002366',
+        borderColor: '#D4AF37',
+        borderWidth: 1,
+        borderRadius: 5,
+        hoverBackgroundColor: '#D4AF37'
+    }]
+        },
+        options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: function (context) {
+                        return context.parsed.x.toLocaleString() + ' €';
                     }
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            // Update badge appearance
-                            if (data.paid) {
-                                badge.className = 'badge bg-success payment-status';
-                                badge.innerHTML = '<i class="fas fa-check-circle"></i> Réglée';
-                            } else {
-                                badge.className = 'badge bg-warning text-dark payment-status';
-                                badge.innerHTML = '<i class="fas fa-clock"></i> Non réglée';
-                            }
-                            badge.style.cursor = 'pointer';
-
-                            // Show brief success message
-                            const originalText = badge.innerHTML;
-                            badge.innerHTML = '<i class="fas fa-check"></i> Mis à jour!';
-                            setTimeout(() => {
-                                badge.innerHTML = originalText;
-                            }, 1000);
-                        } else {
-                            alert('Erreur: ' + data.error);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('Erreur lors de la mise à jour du statut');
-                    });
-            });
-        });
+                }
+            }
+        },
+        scales: {
+            x: {
+                beginAtZero: true,
+                grid: { color: '#f8f9fa' }
+            },
+            y: {
+                grid: { display: false }
+            }
+        }
+    }
     });
 </script>
 {% endblock %}
