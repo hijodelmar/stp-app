@@ -29,8 +29,8 @@
                     <tr>
                         <th>Raison Sociale</th>
                         <th>Ville</th>
-                        <th>Téléphone</th>
-                        <th>Email</th>
+                        <th>Contact</th>
+                        <th>Historique</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -39,8 +39,16 @@
                     <tr>
                         <td>{{ client.raison_sociale }}</td>
                         <td>{{ client.ville }}</td>
-                        <td>{{ client.telephone }}</td>
-                        <td>{{ client.email }}</td>
+                        <td>
+                            <small class="d-block">{{ client.telephone or '-' }}</small>
+                            <small class="text-muted">{{ client.email or '-' }}</small>
+                        </td>
+                        <td>
+                            <small class="d-block">Créé par: {{ client.created_by.username if client.created_by else
+                                'Système' }} ({{ client.created_at.strftime('%d/%m/%y') }})</small>
+                            <small class="text-muted">Modif: {{ client.updated_by.username if client.updated_by else
+                                'Système' }} ({{ client.updated_at.strftime('%d/%m/%y') }})</small>
+                        </td>
                         <td>
                             <a href="{{ url_for('clients.edit', id=client.id) }}"
                                 class="btn btn-sm btn-outline-secondary me-1"><i class="fas fa-edit"></i></a>

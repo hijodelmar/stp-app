@@ -5,9 +5,14 @@ from extensions import db
 from models import CompanyInfo
 from forms import CompanyInfoForm
 
+from flask_login import login_required
+from utils.auth import role_required
+
 bp = Blueprint('settings', __name__)
 
 @bp.route('/', methods=['GET', 'POST'])
+@login_required
+@role_required(['manager'])
 def index():
     info = CompanyInfo.query.first()
     if not info:
@@ -48,6 +53,8 @@ def index():
     return render_template('settings.html', form=form, info=info)
 
 @bp.route('/template_editor')
+@login_required
+@role_required(['manager'])
 def template_editor():
     # Read current template content
     template_path = os.path.join(current_app.root_path, 'templates', 'pdf_template.html')

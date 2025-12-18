@@ -32,6 +32,7 @@ class DocumentForm(FlaskForm):
     date = StringField('Date', validators=[DataRequired()]) # We'll use a date picker
     autoliquidation = BooleanField('Auto-liquidation (Pas de TVA)')
     paid = BooleanField('Facture Réglée')
+    client_reference = StringField('Référence Client', validators=[Optional(), Length(max=30)])
     lignes = FieldList(FormField(LigneDocumentForm), min_entries=1)
     submit = SubmitField('Enregistrer')
 

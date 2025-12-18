@@ -1,7 +1,8 @@
 import os
 from flask import Flask, render_template
+from flask_login import login_required
 from config import Config
-from extensions import db
+from extensions import db, login_manager
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -9,6 +10,15 @@ def create_app(config_class=Config):
 
     # Initialisation des extensions
     db.init_app(app)
+    login_manager.init_app(app)
+    login_manager.login_view = 'auth.login'
+    login_manager.login_message = "Veuillez vous connecter pour accéder à cette page."
+    login_manager.login_message_category = "info"
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        from models import User
+        return User.query.get(int(user_id))
 
     # Création du dossier instance si nécessaire pour la DB
     try:
@@ -42,7 +52,14 @@ def create_app(config_class=Config):
     from routes.settings import bp as settings_bp
     app.register_blueprint(settings_bp, url_prefix='/settings')
 
+    from routes.auth import bp as auth_bp
+    app.register_blueprint(auth_bp, url_prefix='/auth')
+
+    from routes.users import bp as users_bp
+    app.register_blueprint(users_bp, url_prefix='/users')
+
     @app.route('/')
+    @login_required
     def index():
         from models import CompanyInfo
         info = CompanyInfo.query.first()

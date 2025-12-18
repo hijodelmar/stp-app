@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h4 class="mb-0">{{ title }}</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Identifiant</label>
+                        <input type="text" class="form-control" id="username" name="username"
+                            value="{{ user.username if user else '' }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="role" class="form-label">Rôle</label>
+                        <select class="form-select" id="role" name="role" required>
+                            <option value="client_admin" {{ 'selected' if user and user.role=='client_admin' }}>
+                                Gestionnaire Clients</option>
+                            <option value="devis_admin" {{ 'selected' if user and user.role=='devis_admin' }}>
+                                Gestionnaire Devis</option>
+                            <option value="facture_admin" {{ 'selected' if user and user.role=='facture_admin' }}>
+                                Gestionnaire Factures</option>
+                            <option value="avoir_admin" {{ 'selected' if user and user.role=='avoir_admin' }}>
+                                Gestionnaire Avoirs</option>
+                            <option value="manager" {{ 'selected' if user and user.role=='manager' or not user }}>
+                                Manager (Tout sauf Admin)</option>
+                            <option value="admin" {{ 'selected' if user and user.role=='admin' }}>Administrateur (Tout +
+                                Gestion Utilisateurs)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Mot de passe {{ '(Laisser vide pour ne pas changer)' if
+                            user else '' }}</label>
+                        <input type="password" class="form-control" id="password" name="password" {{ 'required' if not
+                            user }}>
+                    </div>
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">{{ 'Enregistrer les modifications' if user else
+                            'Créer l\'utilisateur' }}</button>
+                        <a href="{{ url_for('users.index') }}" class="btn btn-outline-secondary">Annuler</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

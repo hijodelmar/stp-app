@@ -120,6 +120,10 @@
     <div
         style="clear: both; margin-top: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
         <h2 style="margin: 0; color: #005c97;">{{ document.type|upper }} N° {{ document.numero }}</h2>
+        {% if document.client_reference %}
+        <p style="margin: 5px 0; font-size: 13px;">Référence Client : <strong>{{ document.client_reference }}</strong>
+        </p>
+        {% endif %}
         {% if document.type == 'avoir' %}
         <p style="margin: 0; color: #666; font-size: 11px;">Sur facture N° {{ document.source_document.numero if
             document.source_document else '(Aucune facture liée)' }}</p>
@@ -223,6 +227,5 @@
         {% endif %}
     </div>
 </body>
-
 
 </html>

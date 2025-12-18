@@ -20,71 +20,74 @@
                             {{ form.date.label(class="form-label") }}
                             {{ form.date(class="form-control", type="date") }}
                         </div>
-                        <div class="col-md-3 d-flex align-items-end">
-                            <div class="form-check mb-2">
-                                {{ form.autoliquidation(class="form-check-input") }}
-                                {{ form.autoliquidation.label(class="form-check-label") }}
-                            </div>
-                        </div>
                     </div>
-
-                    <h5 class="mb-3">Lignes du document</h5>
-                    <div id="lignes-container">
-                        {% for ligne in form.lignes %}
-                        <div class="ligne-item row mb-2 align-items-end">
-                            <div class="col-md-5">
-                                {{ ligne.designation.label(class="form-label small") }}
-                                {{ ligne.designation(class="form-control") }}
-                            </div>
-                            <div class="col-md-2">
-                                {{ ligne.quantite.label(class="form-label small") }}
-                                {{ ligne.quantite(class="form-control text-end calc-input") }}
-                            </div>
-                            <div class="col-md-3">
-                                {{ ligne.prix_unitaire.label(class="form-label small") }}
-                                {{ ligne.prix_unitaire(class="form-control text-end calc-input") }}
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label small">Total Ligne</label>
-                                <input type="text" class="form-control text-end total-ligne" readonly value="0.00">
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-
-                    <div class="mt-3">
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="add-ligne-btn"><i
-                                class="fas fa-plus"></i> Ajouter une ligne</button>
-                    </div>
-
-                    <div class="row justify-content-end mt-4">
-                        <div class="col-md-4">
-                            <table class="table table-sm table-borderless">
-                                <tr>
-                                    <td class="text-end"><strong>Total HT :</strong></td>
-                                    <td class="text-end" id="total-ht">0.00 €</td>
-                                </tr>
-                                <tr id="row-tva">
-                                    <td class="text-end"><strong>TVA (20%) :</strong></td>
-                                    <td class="text-end" id="total-tva">0.00 €</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-end"><strong>Total TTC :</strong></td>
-                                    <td class="text-end fs-5" id="total-ttc">0.00 €</td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="d-grid gap-2 mt-4">
-                        {{ form.submit(class="btn btn-primary btn-lg") }}
-                        <a href="{{ request.referrer or url_for('index') }}"
-                            class="btn btn-outline-secondary">Annuler</a>
-                    </div>
-                </form>
             </div>
         </div>
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                {{ form.client_reference.label(class="form-label") }}
+                {{ form.client_reference(class="form-control", placeholder="Optionnel (ex: BC-12345)") }}
+                <div class="form-text">Référence interne du client (30 caractères max).</div>
+            </div>
+        </div>
+
+        <h5 class="mb-3">Lignes du document</h5>
+        <div id="lignes-container">
+            {% for ligne in form.lignes %}
+            <div class="ligne-item row mb-2 align-items-end">
+                <div class="col-md-5">
+                    {{ ligne.designation.label(class="form-label small") }}
+                    {{ ligne.designation(class="form-control") }}
+                </div>
+                <div class="col-md-2">
+                    {{ ligne.quantite.label(class="form-label small") }}
+                    {{ ligne.quantite(class="form-control text-end calc-input") }}
+                </div>
+                <div class="col-md-3">
+                    {{ ligne.prix_unitaire.label(class="form-label small") }}
+                    {{ ligne.prix_unitaire(class="form-control text-end calc-input") }}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small">Total Ligne</label>
+                    <input type="text" class="form-control text-end total-ligne" readonly value="0.00">
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="mt-3">
+            <button type="button" class="btn btn-sm btn-outline-primary" id="add-ligne-btn"><i class="fas fa-plus"></i>
+                Ajouter une ligne</button>
+        </div>
+
+        <div class="row justify-content-end mt-4">
+            <div class="col-md-4">
+                <table class="table table-sm table-borderless">
+                    <tr>
+                        <td class="text-end"><strong>Total HT :</strong></td>
+                        <td class="text-end" id="total-ht">0.00 €</td>
+                    </tr>
+                    <tr id="row-tva">
+                        <td class="text-end"><strong>TVA (20%) :</strong></td>
+                        <td class="text-end" id="total-tva">0.00 €</td>
+                    </tr>
+                    <tr>
+                        <td class="text-end"><strong>Total TTC :</strong></td>
+                        <td class="text-end fs-5" id="total-ttc">0.00 €</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="d-grid gap-2 mt-4">
+            {{ form.submit(class="btn btn-primary btn-lg") }}
+            <a href="{{ request.referrer or url_for('index') }}" class="btn btn-outline-secondary">Annuler</a>
+        </div>
+        </form>
     </div>
+</div>
+</div>
 </div>
 
 <!-- Template hidden for JS -->

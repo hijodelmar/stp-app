@@ -4,9 +4,12 @@ from models import Document
 from services.pdf_generator import generate_pdf
 import os
 
+from flask_login import login_required
+
 bp = Blueprint('documents', __name__)
 
 @bp.route('/pdf/<int:id>')
+@login_required
 def view_pdf(id):
     document = Document.query.get_or_404(id)
     

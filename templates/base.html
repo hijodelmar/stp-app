@@ -23,27 +23,72 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
+                    {% if current_user.is_authenticated %}
+                    {% if current_user.role in ['admin', 'manager', 'client_admin'] %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('clients.index') }}"><i class="fas fa-users me-1"></i>
                             Clients</a>
                     </li>
+                    {% endif %}
+
+                    {% if current_user.role in ['admin', 'manager', 'devis_admin'] %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('devis.index') }}"><i class="fas fa-file-invoice me-1"></i>
                             Devis</a>
                     </li>
+                    {% endif %}
+
+                    {% if current_user.role in ['admin', 'manager', 'facture_admin'] %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('factures.index') }}"><i
                                 class="fas fa-file-invoice-dollar me-1"></i> Factures</a>
                     </li>
+                    {% endif %}
+
+                    {% if current_user.role in ['admin', 'manager', 'avoir_admin'] %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('avoirs.index') }}"><i
                                 class="fas fa-exchange-alt me-1"></i> Avoirs</a>
                     </li>
-                    <!-- Archives link could just point to a folder listing or be redundant if we have lists per type -->
+                    {% endif %}
+
+                    {% if current_user.role in ['admin', 'manager'] %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('settings.index') }}"><i class="fas fa-cog me-1"></i>
                             Paramètres</a>
                     </li>
+                    {% endif %}
+
+                    {% if current_user.role == 'admin' %}
+                    <li class="nav-item">
+                        <a class="nav-link text-warning" href="{{ url_for('users.index') }}"><i
+                                class="fas fa-user-shield me-1"></i> Utilisateurs</a>
+                    </li>
+                    {% endif %}
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav">
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                            data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i> {{ current_user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><span class="dropdown-item-text small text-muted">Role: {{ current_user.role }}</span>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}"><i
+                                        class="fas fa-sign-out-alt me-1"></i> Déconnexion</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('auth.login') }}">Connexion</a>
+                    </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>

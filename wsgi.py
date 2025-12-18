@@ -1,9 +1,10 @@
 import sys
 import os
-# Ajouter le répertoire de l'app au path
-project_home = '/home/VOTRE_USERNAME/stp'
-if project_home not in sys.path:
-    sys.path.insert(0, project_home)
+
+# IMPORTANT: Update this path with your PythonAnywhere username
+# Example: /home/yourusername/STPAPP
+project_home = '/home/YOUR_USERNAME_HERE/STPAPP'
+
 # Importer l'application Flask
 from app import create_app
 application = create_app()

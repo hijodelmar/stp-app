@@ -4,9 +4,14 @@ from models import Client
 from forms import ClientForm
 from sqlalchemy.exc import IntegrityError
 
+from flask_login import login_required, current_user
+from utils.auth import role_required
+
 bp = Blueprint('clients', __name__)
 
 @bp.route('/')
+@login_required
+@role_required(['client_admin', 'manager'])
 def index():
     q = request.args.get('q')
     if q:
@@ -22,22 +27,19 @@ def index():
     return render_template('clients/index.html', clients=clients)
 
 @bp.route('/add', methods=['GET', 'POST'])
+@login_required
+@role_required(['client_admin', 'manager'])
 def add():
     form = ClientForm()
     if form.validate_on_submit():
-        # Convert empty strings to None for email to avoid unique constraint violation
-        email = form.email.data if form.email.data else None
-        
-        client = Client(
-            raison_sociale=form.raison_sociale.data,
-            adresse=form.adresse.data,
-            code_postal=form.code_postal.data,
-            ville=form.ville.data,
-            telephone=form.telephone.data,
-            email=email,
-            siret=form.siret.data,
-            tva_intra=form.tva_intra.data
-        )
+        client = Client()
+        form.populate_obj(client)
+        client.created_by_id = current_user.id
+        client.updated_by_id = current_user.id
+        # Ensure email is None if empty
+        if not client.email:
+            client.email = None
+            
         db.session.add(client)
         try:
             db.session.commit()
@@ -50,11 +52,15 @@ def add():
     return render_template('clients/form.html', form=form, title="Nouveau Client")
 
 @bp.route('/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+@role_required(['client_admin', 'manager'])
 def edit(id):
     client = Client.query.get_or_404(id)
     form = ClientForm(obj=client)
     if form.validate_on_submit():
         form.populate_obj(client)
+        client.updated_by_id = current_user.id
+        client.updated_at = datetime.utcnow()
         # Ensure email is None if empty
         if not client.email:
             client.email = None
@@ -70,9 +76,22 @@ def edit(id):
     return render_template('clients/form.html', form=form, title="Modifier Client")
 
 @bp.route('/delete/<int:id>', methods=['POST'])
+@login_required
+@role_required(['client_admin', 'manager'])
 def delete(id):
     client = Client.query.get_or_404(id)
-    db.session.delete(client)
-    db.session.commit()
-    flash('Client supprimé.', 'info')
+    
+    # Check if client has documents
+    if client.documents:
+        flash(f"Impossible de supprimer le client '{client.raison_sociale}' car il possède des devis ou factures associés. Vous devez d'abord supprimer ses documents.", 'danger')
+        return redirect(url_for('clients.index'))
+    
+    try:
+        db.session.delete(client)
+        db.session.commit()
+        flash('Client supprimé.', 'info')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erreur lors de la suppression : {str(e)}', 'danger')
+        
     return redirect(url_for('clients.index'))

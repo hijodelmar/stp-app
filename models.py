@@ -1,5 +1,23 @@
 from datetime import datetime
 from extensions import db
+from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
+
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64), index=True, unique=True, nullable=False)
+    password_hash = db.Column(db.String(128))
+    role = db.Column(db.String(20), nullable=False, default='manager') 
+    # Roles: 'client_admin', 'devis_admin', 'facture_admin', 'avoir_admin', 'manager', 'admin'
+    
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+        
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+    def __repr__(self):
+        return f'<User {self.username}>'
 
 class Client(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -12,6 +30,15 @@ class Client(db.Model):
     siret = db.Column(db.String(50))
     tva_intra = db.Column(db.String(50))
     date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Audit trail
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    updated_by_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    
+    created_by = db.relationship('User', foreign_keys=[created_by_id])
+    updated_by = db.relationship('User', foreign_keys=[updated_by_id])
     
     # Relation avec les documents
     documents = db.relationship('Document', backref='client', lazy=True)
@@ -33,7 +60,17 @@ class Document(db.Model):
     
     autoliquidation = db.Column(db.Boolean, default=False)
     paid = db.Column(db.Boolean, default=False)  # Payment status for invoices
+    client_reference = db.Column(db.String(30))  # Référence client (max 30 chars)
     pdf_path = db.Column(db.String(200)) # Chemin vers le fichier PDF archivé
+    
+    # Audit trail
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    updated_by_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    
+    created_by = db.relationship('User', foreign_keys=[created_by_id])
+    updated_by = db.relationship('User', foreign_keys=[updated_by_id])
     
     # Lien vers le document source (ex: Devis pour une Facture)
     source_document_id = db.Column(db.Integer, db.ForeignKey('document.id'), nullable=True)

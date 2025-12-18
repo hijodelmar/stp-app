@@ -4,9 +4,14 @@ from extensions import db
 from models import Document, LigneDocument, Client
 from forms import DocumentForm
 
+from flask_login import login_required, current_user
+from utils.auth import role_required
+
 bp = Blueprint('factures', __name__)
 
 @bp.route('/')
+@login_required
+@role_required(['facture_admin', 'manager'])
 def index():
     q = request.args.get('q')
     if q:
@@ -22,6 +27,8 @@ def index():
     return render_template('factures/index.html', documents=documents)
 
 @bp.route('/add', methods=['GET', 'POST'])
+@login_required
+@role_required(['facture_admin', 'manager'])
 def add():
     # Similar logic to Devis but generates 'facture' type and F- number
     form = DocumentForm()
@@ -38,7 +45,10 @@ def add():
             date=datetime.strptime(form.date.data, '%Y-%m-%d'),
             client_id=form.client_id.data,
             autoliquidation=form.autoliquidation.data,
-            paid=form.paid.data
+            paid=form.paid.data,
+            client_reference=form.client_reference.data,
+            created_by_id=current_user.id,
+            updated_by_id=current_user.id
         )
         
         total_ht = 0
@@ -70,6 +80,8 @@ def add():
     return render_template('factures/form.html', form=form, title="Nouvelle Facture")
 
 @bp.route('/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+@role_required(['facture_admin', 'manager'])
 def edit(id):
     document = Document.query.get_or_404(id)
     if document.type != 'facture':
@@ -92,6 +104,9 @@ def edit(id):
         document.date = datetime.strptime(form.date.data, '%Y-%m-%d')
         document.autoliquidation = form.autoliquidation.data
         document.paid = form.paid.data
+        document.client_reference = form.client_reference.data
+        document.updated_by_id = current_user.id
+        document.updated_at = datetime.utcnow()
         
         document.lignes = []
         
@@ -120,17 +135,27 @@ def edit(id):
     return render_template('factures/form.html', form=form, title=f"Modifier Facture {document.numero}")
 
 @bp.route('/delete/<int:id>', methods=['POST'])
+@login_required
+@role_required(['facture_admin', 'manager'])
 def delete(id):
     document = Document.query.get_or_404(id)
     if document.type != 'facture':
-        flash('Document invalide.', 'danger')
+        abort(403)
+        
+    # Check if an avoir was generated from this facture
+    if document.generated_documents:
+        flash(f"Impossible de supprimer la facture {document.numero} car un avoir y est lié.", 'danger')
         return redirect(url_for('factures.index'))
+        
+    db.session.delete(document)
+    db.session.commit()
+    flash('Facture supprimée.', 'info')
+    return redirect(url_for('factures.index'))
     
     # If there are files (PDFs), we could delete them here too, but for safety/archiving we keep them.
     # To delete:
     # if document.pdf_path and os.path.exists(os.path.join(current_app.config['UPLOAD_FOLDER'], document.pdf_path)):
     #    os.remove(...)
-    
     db.session.delete(document)
     db.session.commit()
     flash('Facture supprimée.', 'info')
@@ -173,6 +198,8 @@ def choose_devis():
     return render_template('factures/choose_devis.html', documents=devis_list)
 
 @bp.route('/convert/<int:id>')
+@login_required
+@role_required(['facture_admin', 'manager'])
 def convert_from_devis(id):
     devis = Document.query.get_or_404(id)
     if devis.type != 'devis':
@@ -192,7 +219,10 @@ def convert_from_devis(id):
         montant_ht=devis.montant_ht,
         tva=devis.tva,
         montant_ttc=devis.montant_ttc,
-        source_document_id=devis.id
+        source_document_id=devis.id,
+        client_reference=devis.client_reference,
+        created_by_id=current_user.id,
+        updated_by_id=current_user.id
     )
     
     # Clone lines

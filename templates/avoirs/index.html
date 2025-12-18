@@ -34,9 +34,9 @@
                         <th>Numéro</th>
                         <th>Date</th>
                         <th>Client</th>
+                        <th>Historique</th>
                         <th>Source</th>
-                        <th>Montant HT</th>
-                        <th>TTC</th>
+                        <th>Montants</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -47,14 +47,22 @@
                         <td>{{ doc.date.strftime('%d/%m/%Y') }}</td>
                         <td>{{ doc.client.raison_sociale }}</td>
                         <td>
+                            <small class="d-block">Créé par: {{ doc.created_by.username if doc.created_by else 'Système'
+                                }}</small>
+                            <small class="text-muted">Dernière modif: {{ doc.updated_by.username if doc.updated_by else
+                                'Système' }} ({{ doc.updated_at.strftime('%d/%m/%y %H:%M') }})</small>
+                        </td>
+                        <td>
                             {% if doc.source_document %}
                             <span class="badge bg-light text-dark border">{{ doc.source_document.numero }}</span>
                             {% else %}
                             <span class="text-muted">-</span>
                             {% endif %}
                         </td>
-                        <td>{{ "%.2f"|format(doc.montant_ht) }} €</td>
-                        <td class="fw-bold">{{ "%.2f"|format(doc.montant_ttc) }} €</td>
+                        <td>
+                            <small class="d-block text-muted">HT: {{ "%.2f"|format(doc.montant_ht) }} €</small>
+                            <div class="fw-bold">TTC: {{ "%.2f"|format(doc.montant_ttc) }} €</div>
+                        </td>
                         <td>
                             <a href="{{ url_for('documents.view_pdf', id=doc.id) }}"
                                 class="btn btn-sm btn-outline-info me-1" target="_blank"><i class="fas fa-file-pdf"></i>

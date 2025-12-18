@@ -4,9 +4,14 @@ from extensions import db
 from models import Document, LigneDocument, Client
 from forms import DocumentForm
 
+from flask_login import login_required, current_user
+from utils.auth import role_required
+
 bp = Blueprint('devis', __name__)
 
 @bp.route('/')
+@login_required
+@role_required(['devis_admin', 'manager'])
 def index():
     q = request.args.get('q')
     if q:
@@ -22,6 +27,8 @@ def index():
     return render_template('devis/index.html', documents=documents)
 
 @bp.route('/add', methods=['GET', 'POST'])
+@login_required
+@role_required(['devis_admin', 'manager'])
 def add():
     form = DocumentForm()
     # Populate client choices
@@ -38,7 +45,10 @@ def add():
             numero=numero,
             date=datetime.strptime(form.date.data, '%Y-%m-%d'),
             client_id=form.client_id.data,
-            autoliquidation=form.autoliquidation.data
+            autoliquidation=form.autoliquidation.data,
+            client_reference=form.client_reference.data,
+            created_by_id=current_user.id,
+            updated_by_id=current_user.id
         )
         
         # Calcul des totaux et ajout des lignes
@@ -72,6 +82,8 @@ def add():
     return render_template('devis/form.html', form=form, title="Nouveau Devis")
 
 @bp.route('/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+@role_required(['devis_admin', 'manager'])
 def edit(id):
     document = Document.query.get_or_404(id)
     if document.type != 'devis':
@@ -94,6 +106,9 @@ def edit(id):
         document.client_id = form.client_id.data
         document.date = datetime.strptime(form.date.data, '%Y-%m-%d')
         document.autoliquidation = form.autoliquidation.data
+        document.client_reference = form.client_reference.data
+        document.updated_by_id = current_user.id
+        document.updated_at = datetime.utcnow()
         
         # Update lines: Clear old ones and add new ones
         # Because cascading delete-orphan is on, removing them from list should work, 
@@ -130,10 +145,16 @@ def edit(id):
     return render_template('devis/form.html', form=form, title=f"Modifier Devis {document.numero}")
 
 @bp.route('/delete/<int:id>', methods=['POST'])
+@login_required
+@role_required(['devis_admin', 'manager'])
 def delete(id):
     document = Document.query.get_or_404(id)
     if document.type != 'devis':
-        flash('Opération non autorisée.', 'danger')
+        abort(403)
+        
+    # Check if a facture was generated from this devis
+    if document.generated_documents:
+        flash(f"Impossible de supprimer le devis {document.numero} car une facture ou un avoir y est lié.", 'danger')
         return redirect(url_for('devis.index'))
         
     db.session.delete(document)
