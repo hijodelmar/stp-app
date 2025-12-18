@@ -84,8 +84,7 @@
                 <td style="width: 150px; padding-right: 15px;">
                     {% if info and info.logo_path %}
                     <!-- Ajout d'une largeur explicite pour éviter les erreurs de calcul xhtml2pdf -->
-                    <img src="d:/websites/stp/static/{{ info.logo_path }}" width="150"
-                        style="width: 150px; height: auto;">
+                    <img src="{{ logo_abs_path }}" width="150" style="width: 150px; height: auto;">
                     {% endif %}
                 </td>
 
@@ -224,5 +223,6 @@
         {% endif %}
     </div>
 </body>
+
 
 </html>
