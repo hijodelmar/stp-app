@@ -214,6 +214,12 @@ def convert_from_devis(id):
     if devis.type != 'devis':
          flash('Document non valide pour conversion.', 'danger')
          return redirect(url_for('devis.index'))
+    
+    # Check if an invoice already exists for this devis
+    existing_facture = Document.query.filter_by(type='facture', source_document_id=id).first()
+    if existing_facture:
+        flash(f'Ce devis a déjà été converti en facture (N° {existing_facture.numero}).', 'warning')
+        return redirect(url_for('devis.index'))
          
     year = datetime.now().year
     count = Document.query.filter(Document.numero.like(f'F-{year}-%')).count()
