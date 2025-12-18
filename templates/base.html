@@ -54,8 +54,9 @@
 
                     {% if current_user.role in ['admin', 'manager'] %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('settings.index') }}"><i class="fas fa-cog me-1"></i>
-                            Paramètres</a>
+                        <a class="nav-link" href="{{ url_for('settings.index') }}" style="color: #D4AF37 !important;">
+                            <i class="fas fa-cog me-1"></i> Paramètres
+                        </a>
                     </li>
                     {% endif %}
 
