@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Sélectionner un Devis à Convertir</h1>
+    <a href="{{ url_for('factures.index') }}" class="btn btn-outline-secondary">Retour</a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form action="{{ url_for('factures.choose_devis') }}" method="GET" class="d-flex">
+            <input class="form-control me-2" type="search" name="q" placeholder="Rechercher (N°, Client, Année)"
+                aria-label="Search" value="{{ request.args.get('q', '') }}">
+            <button class="btn btn-outline-primary" type="submit">Rechercher</button>
+            {% if request.args.get('q') %}
+            <a href="{{ url_for('factures.choose_devis') }}" class="btn btn-outline-secondary ms-2" title="Effacer"><i
+                    class="fas fa-times"></i></a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <p class="mb-4">Choisissez le devis que vous souhaitez transformer en facture. Cela créera une nouvelle facture
+            avec les données du devis.</p>
+
+        {% if documents %}
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Numéro</th>
+                    <th>Date</th>
+                    <th>Client</th>
+                    <th>Montant TTC</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in documents %}
+                <tr>
+                    <td><span class="badge bg-secondary">{{ doc.numero }}</span></td>
+                    <td>{{ doc.date.strftime('%d/%m/%Y') }}</td>
+                    <td>{{ doc.client.raison_sociale }}</td>
+                    <td class="fw-bold">{{ "%.2f"|format(doc.montant_ttc) }} €</td>
+                    <td>
+                        <a href="{{ url_for('factures.convert_from_devis', id=doc.id) }}" class="btn btn-sm btn-success"
+                            onclick="return confirm('Confirmer la conversion du devis {{ doc.numero }} en facture ?');">
+                            <i class="fas fa-check me-2"></i>Convertir
+                        </a>
+                        <a href="{{ url_for('documents.view_pdf', id=doc.id) }}"
+                            class="btn btn-sm btn-outline-info ms-2" target="_blank">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="alert alert-info">
+            Aucun devis disponible à la conversion. <a href="{{ url_for('devis.add') }}">Créer un nouveau devis</a>.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

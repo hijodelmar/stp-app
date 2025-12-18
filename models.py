@@ -1,0 +1,75 @@
+from datetime import datetime
+from extensions import db
+
+class Client(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    raison_sociale = db.Column(db.String(100), nullable=False)
+    adresse = db.Column(db.String(200))
+    code_postal = db.Column(db.String(10))
+    ville = db.Column(db.String(100))
+    telephone = db.Column(db.String(20))
+    email = db.Column(db.String(120), unique=True)
+    siret = db.Column(db.String(50))
+    tva_intra = db.Column(db.String(50))
+    date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relation avec les documents
+    documents = db.relationship('Document', backref='client', lazy=True)
+
+    def __repr__(self):
+        return f'<Client {self.raison_sociale}>'
+
+class Document(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    type = db.Column(db.String(20), nullable=False) # 'devis', 'facture', 'avoir'
+    numero = db.Column(db.String(50), unique=True, nullable=False)
+    date = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
+    
+    montant_ht = db.Column(db.Float, default=0.0)
+    tva = db.Column(db.Float, default=0.0)
+    montant_ttc = db.Column(db.Float, default=0.0)
+    
+    autoliquidation = db.Column(db.Boolean, default=False)
+    paid = db.Column(db.Boolean, default=False)  # Payment status for invoices
+    pdf_path = db.Column(db.String(200)) # Chemin vers le fichier PDF archivé
+    
+    # Lien vers le document source (ex: Devis pour une Facture)
+    source_document_id = db.Column(db.Integer, db.ForeignKey('document.id'), nullable=True)
+    source_document = db.relationship('Document', remote_side=[id], backref='generated_documents')
+    
+    # Relation avec les lignes
+    lignes = db.relationship('LigneDocument', backref='document', lazy=True, cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f'<Document {self.numero}>'
+
+class LigneDocument(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    document_id = db.Column(db.Integer, db.ForeignKey('document.id'), nullable=False)
+    
+    designation = db.Column(db.String(200), nullable=False)
+    quantite = db.Column(db.Float, default=1.0)
+    prix_unitaire = db.Column(db.Float, default=0.0)
+    total_ligne = db.Column(db.Float, default=0.0)
+
+    def __repr__(self):
+        return f'<Ligne {self.designation}>'
+
+class CompanyInfo(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nom = db.Column(db.String(100), nullable=False, default="Service Température Plomberie")
+    adresse = db.Column(db.String(200), nullable=False)
+    cp = db.Column(db.String(10), nullable=False)
+    ville = db.Column(db.String(100), nullable=False)
+    telephone = db.Column(db.String(20), nullable=True)
+    email = db.Column(db.String(120), nullable=True)
+    ville_signature = db.Column(db.String(100), nullable=False)
+    conditions_reglement = db.Column(db.String(200), nullable=True)
+    iban = db.Column(db.String(50), nullable=True)
+    footer_info = db.Column(db.Text, nullable=True)
+    logo_path = db.Column(db.String(200), nullable=True) 
+
+    def __repr__(self):
+        return f'<CompanyInfo {self.nom}>'

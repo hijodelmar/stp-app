@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1><i class="fas fa-edit me-2"></i>Éditeur de Template PDF</h1>
+    <div>
+        <button id="refreshPreview" class="btn btn-outline-primary me-2"><i class="fas fa-sync"></i> Actualiser
+            l'Aperçu</button>
+        <form action="{{ url_for('settings.save_template') }}" method="POST" style="display: inline;">
+            <textarea name="content" id="hiddenContent" style="display:none;"></textarea>
+            <button type="submit" class="btn btn-success" onclick="prepareSave()"><i class="fas fa-save"></i>
+                Sauvegarder</button>
+        </form>
+    </div>
+</div>
+
+<div class="row editor-row">
+    <!-- EDITOR COLUMN -->
+    <div class="col-md-6 h-100">
+        <label class="form-label fw-bold">Code HTML/CSS</label>
+        <textarea id="editor" class="form-control h-100"
+            style="font-family: monospace; font-size: 12px; background-color: #2d2d2d; color: #f8f8f2;">{{ content }}</textarea>
+    </div>
+
+    <!-- PREVIEW COLUMN -->
+    <div class="col-md-6 h-100">
+        <label class="form-label fw-bold">Aperçu en Direct (Données Fictives)</label>
+        <iframe id="previewFrame"
+            style="width: 100%; height: 100%; border: 1px solid #ccc; background-color: white;"></iframe>
+    </div>
+</div>
+
+<script>
+    const editor = document.getElementById('editor');
+    const previewFrame = document.getElementById('previewFrame');
+
+    function updatePreview() {
+        const content = editor.value;
+
+        fetch("{{ url_for('settings.template_preview') }}", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: "content=" + encodeURIComponent(content)
+        })
+            .then(response => response.text())
+            .then(html => {
+                const doc = previewFrame.contentDocument || previewFrame.contentWindow.document;
+                doc.open();
+                doc.write(html);
+                doc.close();
+            })
+            .catch(err => console.error(err));
+    }
+
+    // Update on load
+    updatePreview();
+
+    // Update on button click
+    document.getElementById('refreshPreview').addEventListener('click', updatePreview);
+
+    // Save Sync
+    function prepareSave() {
+        document.getElementById('hiddenContent').value = editor.value;
+    }
+</script>
+{% endblock %}

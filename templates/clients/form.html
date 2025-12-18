@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h3 class="card-title my-2">{{ title }}</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        {{ form.raison_sociale.label(class="form-label") }}
+                        {{ form.raison_sociale(class="form-control") }}
+                        {% for error in form.raison_sociale.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.email.label(class="form-label") }}
+                            {{ form.email(class="form-control") }}
+                            {% for error in form.email.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.telephone.label(class="form-label") }}
+                            {{ form.telephone(class="form-control") }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.adresse.label(class="form-label") }}
+                        {{ form.adresse(class="form-control") }}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            {{ form.code_postal.label(class="form-label") }}
+                            {{ form.code_postal(class="form-control") }}
+                        </div>
+                        <div class="col-md-8 mb-3">
+                            {{ form.ville.label(class="form-label") }}
+                            {{ form.ville(class="form-control") }}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.siret.label(class="form-label") }}
+                            {{ form.siret(class="form-control") }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.tva_intra.label(class="form-label") }}
+                            {{ form.tva_intra(class="form-control") }}
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        {{ form.submit(class="btn btn-primary btn-lg") }}
+                        <a href="{{ url_for('clients.index') }}" class="btn btn-outline-secondary">Annuler</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

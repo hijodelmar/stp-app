@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Liste des Devis</h1>
+    <a href="{{ url_for('devis.add') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Nouveau Devis</a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form action="{{ url_for('devis.index') }}" method="GET" class="d-flex">
+            <input class="form-control me-2" type="search" name="q" placeholder="Rechercher (Numéro, Client)"
+                aria-label="Search" value="{{ request.args.get('q', '') }}">
+            <button class="btn btn-outline-primary" type="submit">Rechercher</button>
+            {% if request.args.get('q') %}
+            <a href="{{ url_for('devis.index') }}" class="btn btn-outline-secondary ms-2" title="Effacer"><i
+                    class="fas fa-times"></i></a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if documents %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Numéro</th>
+                        <th>Date</th>
+                        <th>Client</th>
+                        <th>Montant HT</th>
+                        <th>TTC</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for doc in documents %}
+                    <tr>
+                        <td><span class="badge bg-secondary">{{ doc.numero }}</span></td>
+                        <td>{{ doc.date.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ doc.client.raison_sociale }}</td>
+                        <td>{{ "%.2f"|format(doc.montant_ht) }} €</td>
+                        <td class="fw-bold">{{ "%.2f"|format(doc.montant_ttc) }} €</td>
+                        <td>
+                            <a href="{{ url_for('documents.view_pdf', id=doc.id) }}"
+                                class="btn btn-sm btn-outline-info me-1" target="_blank" title="Voir PDF"><i
+                                    class="fas fa-file-pdf"></i> PDF</a>
+                            <a href="{{ url_for('devis.edit', id=doc.id) }}" class="btn btn-sm btn-outline-primary me-1"
+                                title="Modifier"><i class="fas fa-edit"></i></a>
+                            <a href="{{ url_for('factures.convert_from_devis', id=doc.id) }}"
+                                class="btn btn-sm btn-outline-success me-1"
+                                onclick="return confirm('Convertir ce devis en facture ?');"
+                                title="Convertir en Facture"><i class="fas fa-magic"></i></a>
+                            <form action="{{ url_for('devis.delete', id=doc.id) }}" method="POST" class="d-inline"
+                                onsubmit="return confirm('Supprimer ce devis ?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger"><i
+                                        class="fas fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center py-4">Aucun devis enregistré.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

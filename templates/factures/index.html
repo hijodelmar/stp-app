@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Liste des Factures</h1>
+    <div>
+        <a href="{{ url_for('factures.choose_devis') }}" class="btn btn-success me-2"><i
+                class="fas fa-magic me-2"></i>Créer depuis Devis</a>
+        <a href="{{ url_for('factures.add') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Nouvelle Facture</a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form action="{{ url_for('factures.index') }}" method="GET" class="d-flex">
+            <input class="form-control me-2" type="search" name="q" placeholder="Rechercher (Numéro, Client)"
+                aria-label="Search" value="{{ request.args.get('q', '') }}">
+            <button class="btn btn-outline-primary" type="submit">Rechercher</button>
+            {% if request.args.get('q') %}
+            <a href="{{ url_for('factures.index') }}" class="btn btn-outline-secondary ms-2" title="Effacer"><i
+                    class="fas fa-times"></i></a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if documents %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Numéro</th>
+                        <th>Date</th>
+                        <th>Client</th>
+                        <th>Source</th>
+                        <th>Statut</th>
+                        <th>Montant HT</th>
+                        <th>TTC</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for doc in documents %}
+                    <tr>
+                        <td><span class="badge bg-success">{{ doc.numero }}</span></td>
+                        <td>{{ doc.date.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ doc.client.raison_sociale }}</td>
+                        <td>
+                            {% if doc.source_document %}
+                            <span class="badge bg-light text-dark border">{{ doc.source_document.numero }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if doc.paid %}
+                            <span class="badge bg-success payment-status" data-id="{{ doc.id }}"
+                                style="cursor: pointer;" title="Double-cliquez pour changer"><i
+                                    class="fas fa-check-circle"></i> Réglée</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark payment-status" data-id="{{ doc.id }}"
+                                style="cursor: pointer;" title="Double-cliquez pour changer"><i
+                                    class="fas fa-clock"></i> Non réglée</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ "%.2f"|format(doc.montant_ht) }} €</td>
+                        <td class="fw-bold">{{ "%.2f"|format(doc.montant_ttc) }} €</td>
+                        <td>
+                            <a href="{{ url_for('documents.view_pdf', id=doc.id) }}"
+                                class="btn btn-sm btn-outline-info me-1" target="_blank"><i class="fas fa-file-pdf"></i>
+                                PDF</a>
+                            <a href="{{ url_for('factures.edit', id=doc.id) }}"
+                                class="btn btn-sm btn-outline-primary me-1" title="Modifier"><i
+                                    class="fas fa-edit"></i></a>
+                            <form action="{{ url_for('factures.delete', id=doc.id) }}" method="POST" class="d-inline"
+                                onsubmit="return confirm('Supprimer cette facture ?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer"><i
+                                        class="fas fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center py-4">Aucune facture enregistrée.</p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Add double-click handler to all payment status badges
+        document.querySelectorAll('.payment-status').forEach(function (badge) {
+            badge.addEventListener('dblclick', function () {
+                const docId = this.getAttribute('data-id');
+                const badge = this;
+
+                // Send AJAX request to toggle payment status
+                fetch(`/factures/toggle_paid/${docId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Update badge appearance
+                            if (data.paid) {
+                                badge.className = 'badge bg-success payment-status';
+                                badge.innerHTML = '<i class="fas fa-check-circle"></i> Réglée';
+                            } else {
+                                badge.className = 'badge bg-warning text-dark payment-status';
+                                badge.innerHTML = '<i class="fas fa-clock"></i> Non réglée';
+                            }
+                            badge.style.cursor = 'pointer';
+
+                            // Show brief success message
+                            const originalText = badge.innerHTML;
+                            badge.innerHTML = '<i class="fas fa-check"></i> Mis à jour!';
+                            setTimeout(() => {
+                                badge.innerHTML = originalText;
+                            }, 1000);
+                        } else {
+                            alert('Erreur: ' + data.error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Erreur lors de la mise à jour du statut');
+                    });
+            });
+        });
+    });
+</script>
+{% endblock %}

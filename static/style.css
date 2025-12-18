@@ -1,0 +1,68 @@
+/* Custom styles */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.main-content {
+    flex: 1;
+}
+
+.navbar {
+    background: linear-gradient(to right, #005c97, #363795);
+    /* Example blue gradient */
+}
+
+/* Navbar Animations */
+.navbar-brand {
+    transition: transform 0.3s ease;
+}
+
+.navbar-brand:hover {
+    transform: scale(1.05) rotate(-2deg);
+}
+
+.nav-link {
+    transition: all 0.3s ease;
+    border-radius: 5px;
+    padding: 0.5rem 1rem !important;
+    /* Overwatch bootstrap padding */
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    color: #fff !important;
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background-color: #fff;
+    transition: all 0.3s ease;
+    transform: translateX(-50%);
+}
+
+.nav-link:hover::after {
+    width: 80%;
+}
+
+/* Editor Responsive Layout */
+.editor-row {
+    height: auto;
+    min-height: 500px;
+}
+
+@media (min-width: 768px) {
+    .editor-row {
+        height: calc(100vh - 200px);
+    }
+}

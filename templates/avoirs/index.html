@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Liste des Avoirs</h1>
+    <div>
+        <a href="{{ url_for('avoirs.choose_facture') }}" class="btn btn-warning me-2"><i
+                class="fas fa-magic me-2"></i>Créer depuis Facture</a>
+        <a href="{{ url_for('avoirs.add') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Nouvel Avoir</a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form action="{{ url_for('avoirs.index') }}" method="GET" class="d-flex">
+            <input class="form-control me-2" type="search" name="q" placeholder="Rechercher (Numéro, Client)"
+                aria-label="Search" value="{{ request.args.get('q', '') }}">
+            <button class="btn btn-outline-primary" type="submit">Rechercher</button>
+            {% if request.args.get('q') %}
+            <a href="{{ url_for('avoirs.index') }}" class="btn btn-outline-secondary ms-2" title="Effacer"><i
+                    class="fas fa-times"></i></a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if documents %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Numéro</th>
+                        <th>Date</th>
+                        <th>Client</th>
+                        <th>Source</th>
+                        <th>Montant HT</th>
+                        <th>TTC</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for doc in documents %}
+                    <tr>
+                        <td><span class="badge bg-warning text-dark">{{ doc.numero }}</span></td>
+                        <td>{{ doc.date.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ doc.client.raison_sociale }}</td>
+                        <td>
+                            {% if doc.source_document %}
+                            <span class="badge bg-light text-dark border">{{ doc.source_document.numero }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ "%.2f"|format(doc.montant_ht) }} €</td>
+                        <td class="fw-bold">{{ "%.2f"|format(doc.montant_ttc) }} €</td>
+                        <td>
+                            <a href="{{ url_for('documents.view_pdf', id=doc.id) }}"
+                                class="btn btn-sm btn-outline-info me-1" target="_blank"><i class="fas fa-file-pdf"></i>
+                                PDF</a>
+                            <a href="{{ url_for('avoirs.edit', id=doc.id) }}"
+                                class="btn btn-sm btn-outline-primary me-1" title="Modifier"><i
+                                    class="fas fa-edit"></i></a>
+                            <form action="{{ url_for('avoirs.delete', id=doc.id) }}" method="POST" class="d-inline"
+                                onsubmit="return confirm('Supprimer cet avoir ?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer"><i
+                                        class="fas fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center py-4">Aucun avoir enregistré.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

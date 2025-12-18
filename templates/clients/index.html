@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Liste des Clients</h1>
+    <a href="{{ url_for('clients.add') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Nouveau Client</a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form action="{{ url_for('clients.index') }}" method="GET" class="d-flex">
+            <input class="form-control me-2" type="search" name="q" placeholder="Rechercher (Nom, Ville, Email)"
+                aria-label="Search" value="{{ request.args.get('q', '') }}">
+            <button class="btn btn-outline-primary" type="submit">Rechercher</button>
+            {% if request.args.get('q') %}
+            <a href="{{ url_for('clients.index') }}" class="btn btn-outline-secondary ms-2" title="Effacer"><i
+                    class="fas fa-times"></i></a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if clients %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Raison Sociale</th>
+                        <th>Ville</th>
+                        <th>Téléphone</th>
+                        <th>Email</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for client in clients %}
+                    <tr>
+                        <td>{{ client.raison_sociale }}</td>
+                        <td>{{ client.ville }}</td>
+                        <td>{{ client.telephone }}</td>
+                        <td>{{ client.email }}</td>
+                        <td>
+                            <a href="{{ url_for('clients.edit', id=client.id) }}"
+                                class="btn btn-sm btn-outline-secondary me-1"><i class="fas fa-edit"></i></a>
+                            <form action="{{ url_for('clients.delete', id=client.id) }}" method="POST" class="d-inline"
+                                onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce client ?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger"><i
+                                        class="fas fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center py-4">Aucun client enregistré.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
