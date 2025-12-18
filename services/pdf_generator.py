@@ -13,8 +13,14 @@ def generate_pdf(document):
     # On prend le premier (et normalement unique) enregistrement
     company_info = CompanyInfo.query.first()
         
+    # Base path for static files (used for images in PDF)
+    static_base_path = os.path.join(current_app.root_path, 'static')
+    
     # Rendu du template HTML
-    html_string = render_template('pdf_template.html', document=document, info=company_info)
+    html_string = render_template('pdf_template.html', 
+                                document=document, 
+                                info=company_info,
+                                static_base_path=static_base_path)
     
     # Nom du fichier
     filename = f"{document.numero}.pdf"
