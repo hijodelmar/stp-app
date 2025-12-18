@@ -45,9 +45,9 @@
                         </td>
                         <td>
                             <small class="d-block">Créé par: {{ client.created_by.username if client.created_by else
-                                'Système' }} ({{ client.created_at.strftime('%d/%m/%y') }})</small>
+                                'Système' }} ({{ client.created_at.strftime('%d/%m/%y %H:%M') }})</small>
                             <small class="text-muted">Modif: {{ client.updated_by.username if client.updated_by else
-                                'Système' }} ({{ client.updated_at.strftime('%d/%m/%y') }})</small>
+                                'Système' }} ({{ client.updated_at.strftime('%d/%m/%y %H:%M') }})</small>
                         </td>
                         <td>
                             <a href="{{ url_for('clients.edit', id=client.id) }}"
