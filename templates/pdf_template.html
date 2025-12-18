@@ -120,7 +120,11 @@
     <div
         style="clear: both; margin-top: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
         <h2 style="margin: 0; color: #005c97;">{{ document.type|upper }} N° {{ document.numero }}</h2>
-        {% if document.client_reference %}
+        {% if document.chantier_reference %}
+        <p style="margin: 5px 0; font-size: 14px;">Référence Chantier : <strong>{{ document.chantier_reference
+                }}</strong></p>
+        {% endif %}
+        {% if document.client_reference and document.type != 'devis' %}
         <p style="margin: 5px 0; font-size: 13px;">Référence Client : <strong>{{ document.client_reference }}</strong>
         </p>
         {% endif %}
@@ -200,21 +204,6 @@
         {% endif %}
     </div>
 
-    <!-- SIGNATURE BLOCK (Specific to Devis) -->
-    {% if document.type == 'devis' %}
-    <div style="margin-top: 40px; page-break-inside: avoid;">
-        <div style="float: left; width: 40%;">
-            <strong>Bon pour accord</strong><br>
-            <span style="font-size: 10px; color: #666;">(Date et Signature précédées de la mention "Bon pour
-                accord")</span>
-            <div style="height: 100px; border: 1px solid #ccc; margin-top: 10px;"></div>
-        </div>
-        <div style="float: right; width: 40%; text-align: right;">
-            <strong>Date :</strong> ........................................
-        </div>
-        <div style="clear: both;"></div>
-    </div>
-    {% endif %}
 
 
 

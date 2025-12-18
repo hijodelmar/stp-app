@@ -45,6 +45,7 @@ def add():
             client_id=form.client_id.data,
             autoliquidation=form.autoliquidation.data,
             client_reference=form.client_reference.data,
+            chantier_reference=form.chantier_reference.data,
             created_by_id=current_user.id,
             updated_by_id=current_user.id
         )
@@ -102,6 +103,7 @@ def edit(id):
         document.date = datetime.strptime(form.date.data, '%Y-%m-%d')
         document.autoliquidation = form.autoliquidation.data
         document.client_reference = form.client_reference.data
+        document.chantier_reference = form.chantier_reference.data
         document.updated_by_id = current_user.id
         document.updated_at = datetime.utcnow()
         
@@ -172,6 +174,7 @@ def convert_from_facture(id):
         montant_ttc=facture.montant_ttc,
         source_document_id=facture.id,
         client_reference=facture.client_reference,
+        chantier_reference=facture.chantier_reference,
         created_by_id=current_user.id,
         updated_by_id=current_user.id
     )

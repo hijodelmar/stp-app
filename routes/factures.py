@@ -47,6 +47,7 @@ def add():
             autoliquidation=form.autoliquidation.data,
             paid=form.paid.data,
             client_reference=form.client_reference.data,
+            chantier_reference=form.chantier_reference.data,
             created_by_id=current_user.id,
             updated_by_id=current_user.id
         )
@@ -103,8 +104,16 @@ def edit(id):
         document.client_id = form.client_id.data
         document.date = datetime.strptime(form.date.data, '%Y-%m-%d')
         document.autoliquidation = form.autoliquidation.data
-        document.paid = form.paid.data
+        
+        # Accounting validation: cannot mark as paid if an avoir exists
+        if form.paid.data and document.generated_documents:
+             flash(f"Impossible de marquer la facture {document.numero} comme payée car elle fait l'objet d'un avoir.", "warning")
+             document.paid = False # Force to false
+        else:
+             document.paid = form.paid.data
+             
         document.client_reference = form.client_reference.data
+        document.chantier_reference = form.chantier_reference.data
         document.updated_by_id = current_user.id
         document.updated_at = datetime.utcnow()
         
@@ -221,6 +230,7 @@ def convert_from_devis(id):
         montant_ttc=devis.montant_ttc,
         source_document_id=devis.id,
         client_reference=devis.client_reference,
+        chantier_reference=devis.chantier_reference,
         created_by_id=current_user.id,
         updated_by_id=current_user.id
     )

@@ -56,9 +56,9 @@
                         </td>
                         <td>
                             <small class="d-block">Créé par: {{ doc.created_by.username if doc.created_by else 'Système'
-                                }}</small>
+                                }} ({{ doc.created_at.strftime('%d/%m/%y %H:%M') }})</small>
                             <small class="text-muted">Dernière modif: {{ doc.updated_by.username if doc.updated_by else
-                                'Système' }}</small>
+                                'Système' }} ({{ doc.updated_at.strftime('%d/%m/%y %H:%M') }})</small>
                         </td>
                         <td>
                             <div class="mb-1">

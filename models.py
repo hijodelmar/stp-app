@@ -61,6 +61,7 @@ class Document(db.Model):
     autoliquidation = db.Column(db.Boolean, default=False)
     paid = db.Column(db.Boolean, default=False)  # Payment status for invoices
     client_reference = db.Column(db.String(30))  # Référence client (max 30 chars)
+    chantier_reference = db.Column(db.String(50)) # Référence du chantier (max 50 chars)
     pdf_path = db.Column(db.String(200)) # Chemin vers le fichier PDF archivé
     
     # Audit trail

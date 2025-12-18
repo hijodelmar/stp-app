@@ -28,6 +28,15 @@
                         </div>
                     </div>
 
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            {{ form.chantier_reference.label(class="form-label") }}
+                            {{ form.chantier_reference(class="form-control", placeholder="Optionnel (ex: Chantier
+                            Dupont)") }}
+                            <div class="form-text">Référence du chantier (50 caractères max).</div>
+                        </div>
+                    </div>
+
                     <h5 class="mb-3">Lignes du document</h5>
                     <div id="lignes-container">
                         {% for ligne in form.lignes %}

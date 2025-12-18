@@ -30,6 +30,11 @@
                 {{ form.client_reference(class="form-control", placeholder="Optionnel (ex: BC-12345)") }}
                 <div class="form-text">Référence interne du client (30 caractères max).</div>
             </div>
+            <div class="col-md-6">
+                {{ form.chantier_reference.label(class="form-label") }}
+                {{ form.chantier_reference(class="form-control", placeholder="Optionnel (ex: Chantier Dupont)") }}
+                <div class="form-text">Référence du chantier (50 caractères max).</div>
+            </div>
         </div>
 
         <h5 class="mb-3">Lignes du document</h5>

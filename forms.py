@@ -33,6 +33,7 @@ class DocumentForm(FlaskForm):
     autoliquidation = BooleanField('Auto-liquidation (Pas de TVA)')
     paid = BooleanField('Facture Réglée')
     client_reference = StringField('Référence Client', validators=[Optional(), Length(max=30)])
+    chantier_reference = StringField('Référence Chantier', validators=[Optional(), Length(max=50)])
     lignes = FieldList(FormField(LigneDocumentForm), min_entries=1)
     submit = SubmitField('Enregistrer')
 
