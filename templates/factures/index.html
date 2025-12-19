@@ -3,11 +3,13 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Liste des Factures</h1>
+    {% if current_user.has_any_role(['admin', 'manager', 'facture_admin']) %}
     <div>
         <a href="{{ url_for('factures.choose_devis') }}" class="btn btn-success me-2"><i
                 class="fas fa-magic me-2"></i>Créer depuis Devis</a>
         <a href="{{ url_for('factures.add') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Nouvelle Facture</a>
     </div>
+    {% endif %}
 </div>
 
 <div class="card mb-4">
@@ -70,14 +72,20 @@
                                 <span class="badge bg-danger">Impayée</span>
                                 {% endif %}
                             </div>
+                            {% set has_write_access = current_user.has_any_role(['admin', 'manager', 'facture_admin'])
+                            %}
                             {% if doc.paid %}
-                            <span class="badge bg-success payment-status" data-id="{{ doc.id }}"
-                                style="cursor: pointer;" title="Double-cliquez pour changer"><i
-                                    class="fas fa-check-circle"></i> Reglée</span>
+                            <span class="badge bg-success {{ 'payment-status' if has_write_access }}"
+                                data-id="{{ doc.id }}" style="{{ 'cursor: pointer;' if has_write_access }}"
+                                title="{{ 'Double-cliquez pour changer' if has_write_access else 'Réglée' }}">
+                                <i class="fas fa-check-circle"></i> Reglée
+                            </span>
                             {% else %}
-                            <span class="badge bg-warning text-dark payment-status" data-id="{{ doc.id }}"
-                                style="cursor: pointer;" title="Double-cliquez pour changer"><i
-                                    class="fas fa-clock"></i> Non réglée</span>
+                            <span class="badge bg-warning text-dark {{ 'payment-status' if has_write_access }}"
+                                data-id="{{ doc.id }}" style="{{ 'cursor: pointer;' if has_write_access }}"
+                                title="{{ 'Double-cliquez pour changer' if has_write_access else 'Non réglée' }}">
+                                <i class="fas fa-clock"></i> Non réglée
+                            </span>
                             {% endif %}
                         </td>
                         <td>
@@ -93,6 +101,7 @@
                             <a href="{{ url_for('documents.view_pdf', id=doc.id) }}"
                                 class="btn btn-sm btn-outline-info me-1" target="_blank"><i class="fas fa-file-pdf"></i>
                                 PDF</a>
+                            {% if current_user.has_any_role(['admin', 'manager', 'facture_admin']) %}
                             <a href="{{ url_for('factures.edit', id=doc.id) }}"
                                 class="btn btn-sm btn-outline-primary me-1" title="Modifier"><i
                                     class="fas fa-edit"></i></a>
@@ -101,6 +110,9 @@
                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer"><i
                                         class="fas fa-trash"></i></button>
                             </form>
+                            {% else %}
+                            <span class="badge bg-light text-dark">Lecture seule</span>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}

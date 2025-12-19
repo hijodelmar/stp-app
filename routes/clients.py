@@ -12,7 +12,7 @@ bp = Blueprint('clients', __name__)
 
 @bp.route('/')
 @login_required
-@role_required(['client_admin', 'manager'])
+@role_required(['admin', 'manager', 'reporting', 'client_admin'])
 def index():
     q = request.args.get('q')
     if q:
@@ -29,7 +29,7 @@ def index():
 
 @bp.route('/add', methods=['GET', 'POST'])
 @login_required
-@role_required(['client_admin', 'manager'])
+@role_required(['admin', 'manager', 'client_admin'])
 def add():
     form = ClientForm()
     if form.validate_on_submit():
@@ -54,7 +54,7 @@ def add():
 
 @bp.route('/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
-@role_required(['client_admin', 'manager'])
+@role_required(['admin', 'manager', 'client_admin'])
 def edit(id):
     client = Client.query.get_or_404(id)
     form = ClientForm(obj=client)
@@ -78,7 +78,7 @@ def edit(id):
 
 @bp.route('/delete/<int:id>', methods=['POST'])
 @login_required
-@role_required(['client_admin', 'manager'])
+@role_required(['admin', 'manager', 'client_admin'])
 def delete(id):
     client = Client.query.get_or_404(id)
     

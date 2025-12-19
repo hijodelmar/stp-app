@@ -11,7 +11,7 @@ bp = Blueprint('factures', __name__)
 
 @bp.route('/')
 @login_required
-@role_required(['facture_admin', 'manager'])
+@role_required(['admin', 'manager', 'reporting', 'facture_admin'])
 def index():
     q = request.args.get('q')
     if q:
@@ -28,7 +28,7 @@ def index():
 
 @bp.route('/add', methods=['GET', 'POST'])
 @login_required
-@role_required(['facture_admin', 'manager'])
+@role_required(['admin', 'manager', 'facture_admin'])
 def add():
     # Similar logic to Devis but generates 'facture' type and F- number
     form = DocumentForm()
@@ -82,7 +82,7 @@ def add():
 
 @bp.route('/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
-@role_required(['facture_admin', 'manager'])
+@role_required(['admin', 'manager', 'facture_admin'])
 def edit(id):
     document = Document.query.get_or_404(id)
     if document.type != 'facture':
@@ -145,7 +145,7 @@ def edit(id):
 
 @bp.route('/delete/<int:id>', methods=['POST'])
 @login_required
-@role_required(['facture_admin', 'manager'])
+@role_required(['admin', 'manager', 'facture_admin'])
 def delete(id):
     document = Document.query.get_or_404(id)
     if document.type != 'facture':
@@ -171,6 +171,8 @@ def delete(id):
     return redirect(url_for('factures.index'))
 
 @bp.route('/toggle_paid/<int:id>', methods=['POST'])
+@login_required
+@role_required(['admin', 'manager', 'facture_admin'])
 def toggle_paid(id):
     """Toggle payment status via AJAX"""
     from flask import jsonify
@@ -208,7 +210,7 @@ def choose_devis():
 
 @bp.route('/convert/<int:id>')
 @login_required
-@role_required(['facture_admin', 'manager'])
+@role_required(['admin', 'manager', 'facture_admin'])
 def convert_from_devis(id):
     devis = Document.query.get_or_404(id)
     if devis.type != 'devis':

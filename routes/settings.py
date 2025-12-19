@@ -12,7 +12,7 @@ bp = Blueprint('settings', __name__)
 
 @bp.route('/', methods=['GET', 'POST'])
 @login_required
-@role_required(['manager'])
+@role_required(['admin', 'settings'])
 def index():
     info = CompanyInfo.query.first()
     if not info:
@@ -54,7 +54,7 @@ def index():
 
 @bp.route('/template_editor')
 @login_required
-@role_required(['manager'])
+@role_required(['admin', 'settings'])
 def template_editor():
     # Read current template content
     template_path = os.path.join(current_app.root_path, 'templates', 'pdf_template.html')

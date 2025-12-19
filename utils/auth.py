@@ -9,12 +9,10 @@ def role_required(roles):
             if not current_user.is_authenticated:
                 return abort(401)
             
-            # Admin role can do everything
-            if current_user.role == 'admin':
-                return f(*args, **kwargs)
-            
-            if current_user.role not in roles:
+            # Use the new helper method which also handles 'admin' as superuser
+            if not current_user.has_any_role(roles):
                 return abort(403)
+            
             return f(*args, **kwargs)
         return decorated_function
     return decorator

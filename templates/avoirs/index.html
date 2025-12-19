@@ -3,11 +3,13 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Liste des Avoirs</h1>
+    {% if current_user.has_any_role(['admin', 'manager', 'avoir_admin']) %}
     <div>
         <a href="{{ url_for('avoirs.choose_facture') }}" class="btn btn-warning me-2"><i
                 class="fas fa-magic me-2"></i>Créer depuis Facture</a>
         <a href="{{ url_for('avoirs.add') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Nouvel Avoir</a>
     </div>
+    {% endif %}
 </div>
 
 <div class="card mb-4">
@@ -72,6 +74,7 @@
                             <a href="{{ url_for('documents.view_pdf', id=doc.id) }}"
                                 class="btn btn-sm btn-outline-info me-1" target="_blank"><i class="fas fa-file-pdf"></i>
                                 PDF</a>
+                            {% if current_user.has_any_role(['admin', 'manager', 'avoir_admin']) %}
                             <a href="{{ url_for('avoirs.edit', id=doc.id) }}"
                                 class="btn btn-sm btn-outline-primary me-1" title="Modifier"><i
                                     class="fas fa-edit"></i></a>
@@ -80,6 +83,9 @@
                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer"><i
                                         class="fas fa-trash"></i></button>
                             </form>
+                            {% else %}
+                            <span class="badge bg-light text-dark">Lecture seule</span>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}

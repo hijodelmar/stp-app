@@ -11,7 +11,7 @@ bp = Blueprint('devis', __name__)
 
 @bp.route('/')
 @login_required
-@role_required(['devis_admin', 'manager'])
+@role_required(['admin', 'manager', 'reporting', 'devis_admin'])
 def index():
     q = request.args.get('q')
     if q:
@@ -28,7 +28,7 @@ def index():
 
 @bp.route('/add', methods=['GET', 'POST'])
 @login_required
-@role_required(['devis_admin', 'manager'])
+@role_required(['admin', 'manager', 'devis_admin'])
 def add():
     form = DocumentForm()
     # Populate client choices
@@ -84,7 +84,7 @@ def add():
 
 @bp.route('/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
-@role_required(['devis_admin', 'manager'])
+@role_required(['admin', 'manager', 'devis_admin'])
 def edit(id):
     document = Document.query.get_or_404(id)
     if document.type != 'devis':
@@ -148,7 +148,7 @@ def edit(id):
 
 @bp.route('/delete/<int:id>', methods=['POST'])
 @login_required
-@role_required(['devis_admin', 'manager'])
+@role_required(['admin', 'manager', 'devis_admin'])
 def delete(id):
     document = Document.query.get_or_404(id)
     if document.type != 'devis':

@@ -3,7 +3,9 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Liste des Clients</h1>
+    {% if current_user.has_any_role(['admin', 'manager', 'client_admin']) %}
     <a href="{{ url_for('clients.add') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Nouveau Client</a>
+    {% endif %}
 </div>
 
 <div class="card mb-4">
@@ -50,6 +52,7 @@
                                 'Système' }} ({{ client.updated_at.strftime('%d/%m/%y %H:%M') }})</small>
                         </td>
                         <td>
+                            {% if current_user.has_any_role(['admin', 'manager', 'client_admin']) %}
                             <a href="{{ url_for('clients.edit', id=client.id) }}"
                                 class="btn btn-sm btn-outline-secondary me-1"><i class="fas fa-edit"></i></a>
                             <form action="{{ url_for('clients.delete', id=client.id) }}" method="POST" class="d-inline"
@@ -57,6 +60,9 @@
                                 <button type="submit" class="btn btn-sm btn-outline-danger"><i
                                         class="fas fa-trash"></i></button>
                             </form>
+                            {% else %}
+                            <span class="badge bg-light text-dark">Lecture seule</span>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}

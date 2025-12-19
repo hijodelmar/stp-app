@@ -15,21 +15,27 @@
                             value="{{ user.username if user else '' }}" required>
                     </div>
                     <div class="mb-3">
-                        <label for="role" class="form-label">Rôle</label>
-                        <select class="form-select" id="role" name="role" required>
-                            <option value="client_admin" {{ 'selected' if user and user.role=='client_admin' }}>
-                                Gestionnaire Clients</option>
-                            <option value="devis_admin" {{ 'selected' if user and user.role=='devis_admin' }}>
-                                Gestionnaire Devis</option>
-                            <option value="facture_admin" {{ 'selected' if user and user.role=='facture_admin' }}>
-                                Gestionnaire Factures</option>
-                            <option value="avoir_admin" {{ 'selected' if user and user.role=='avoir_admin' }}>
-                                Gestionnaire Avoirs</option>
-                            <option value="manager" {{ 'selected' if user and user.role=='manager' or not user }}>
-                                Manager (Tout sauf Admin)</option>
-                            <option value="admin" {{ 'selected' if user and user.role=='admin' }}>Administrateur (Tout +
-                                Gestion Utilisateurs)</option>
-                        </select>
+                        <label class="form-label d-block">Habilitations / Rôles</label>
+                        <div class="card bg-light p-3">
+                            <div class="row">
+                                {% for role in all_roles %}
+                                <div class="col-md-6 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="roles"
+                                            value="{{ role.id }}" id="role_{{ role.id }}" {% if user and
+                                            user.has_role(role.name) %}checked{% endif %}>
+                                        <label class="form-check-label" for="role_{{ role.id }}">
+                                            <strong>{{ role.name|title }}</strong>
+                                            <div class="small text-muted">{{ role.description }}</div>
+                                        </label>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="form-text mt-1 text-info">
+                            <i class="fas fa-info-circle me-1"></i> Admin possède tous les droits par défaut.
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label for="password" class="form-label">Mot de passe {{ '(Laisser vide pour ne pas changer)' if

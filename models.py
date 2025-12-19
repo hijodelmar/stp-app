@@ -3,20 +3,46 @@ from extensions import db
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
+# Table d'association pour les rôles multiples
+user_roles = db.Table('user_roles',
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
+    db.Column('role_id', db.Integer, db.ForeignKey('role.id'), primary_key=True)
+)
+
+class Role(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    description = db.Column(db.String(200))
+
+    def __repr__(self):
+        return f'<Role {self.name}>'
+
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), index=True, unique=True, nullable=False)
     password_hash = db.Column(db.String(128))
-    role = db.Column(db.String(20), nullable=False, default='manager') 
-    # Roles: 'client_admin', 'devis_admin', 'facture_admin', 'avoir_admin', 'manager', 'admin'
+    # Note: La colonne 'role' est conservée temporairement pour la migration mais sera ignorée dans le code
+    
     last_active = db.Column(db.DateTime)
     current_session_id = db.Column(db.String(36))
+    
+    # Relation vers les rôles multiples
+    roles = db.relationship('Role', secondary=user_roles, lazy='subquery',
+        backref=db.backref('users', lazy=True))
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
         
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    def has_role(self, role_name):
+        return any(r.name == role_name for r in self.roles)
+
+    def has_any_role(self, roles_list):
+        if self.has_role('admin'):
+            return True
+        return any(r.name in roles_list for r in self.roles)
 
     def __repr__(self):
         return f'<User {self.username}>'

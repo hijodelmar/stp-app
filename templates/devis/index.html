@@ -2,18 +2,20 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Liste des Devis</h1>
-    <a href="{{ url_for('devis.add') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Nouveau Devis</a>
+    <h1>Liste des Clients</h1>
+    {% if current_user.has_any_role(['admin', 'manager', 'client_admin']) %}
+    <a href="{{ url_for('clients.add') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Nouveau Client</a>
+    {% endif %}
 </div>
 
 <div class="card mb-4">
     <div class="card-body">
-        <form action="{{ url_for('devis.index') }}" method="GET" class="d-flex">
-            <input class="form-control me-2" type="search" name="q" placeholder="Rechercher (Numéro, Client)"
+        <form action="{{ url_for('clients.index') }}" method="GET" class="d-flex">
+            <input class="form-control me-2" type="search" name="q" placeholder="Rechercher (Nom, Ville, Email)"
                 aria-label="Search" value="{{ request.args.get('q', '') }}">
             <button class="btn btn-outline-primary" type="submit">Rechercher</button>
             {% if request.args.get('q') %}
-            <a href="{{ url_for('devis.index') }}" class="btn btn-outline-secondary ms-2" title="Effacer"><i
+            <a href="{{ url_for('clients.index') }}" class="btn btn-outline-secondary ms-2" title="Effacer"><i
                     class="fas fa-times"></i></a>
             {% endif %}
         </form>
@@ -22,70 +24,45 @@
 
 <div class="card">
     <div class="card-body">
-        {% if documents %}
+        {% if clients %}
         <div class="table-responsive">
             <table class="table table-hover">
                 <thead>
                     <tr>
-                        <th>Numéro</th>
-                        <th>Date</th>
-                        <th>Client</th>
+                        <th>Raison Sociale</th>
+                        <th>Ville</th>
+                        <th>Contact</th>
                         <th>Historique</th>
-                        <th>Montants</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for doc in documents %}
+                    {% for client in clients %}
                     <tr>
-                        <td><span class="badge bg-secondary">{{ doc.numero }}</span></td>
-                        <td>{{ doc.date.strftime('%d/%m/%Y') }}</td>
-                        <td>{{ doc.client.raison_sociale }}</td>
+                        <td>{{ client.raison_sociale }}</td>
+                        <td>{{ client.ville }}</td>
                         <td>
-                            <small class="d-block">Créé par: {{ doc.created_by.username if doc.created_by else 'Système'
-                                }}</small>
-                            <small class="text-muted">Dernière modif: {{ doc.updated_by.username if doc.updated_by else
-                                'Système' }} ({{ doc.updated_at.strftime('%d/%m/%y %H:%M') }})</small>
+                            <small class="d-block">{{ client.telephone or '-' }}</small>
+                            <small class="text-muted">{{ client.email or '-' }}</small>
                         </td>
                         <td>
-                            <small class="d-block text-muted">HT: {{ "%.2f"|format(doc.montant_ht) }} €</small>
-                            {% if doc.autoliquidation %}
-                            <span class="badge bg-info text-dark small"><i class="fas fa-hand-holding-usd me-1"></i>
-                                Auto-liquidation</span>
-                            {% else %}
-                            <div class="fw-bold">TTC: {{ "%.2f"|format(doc.montant_ttc) }} €</div>
-                            {% endif %}
+                            <small class="d-block">Créé par: {{ client.created_by.username if client.created_by else
+                                'Système' }} ({{ client.created_at.strftime('%d/%m/%y %H:%M') }})</small>
+                            <small class="text-muted">Modif: {{ client.updated_by.username if client.updated_by else
+                                'Système' }} ({{ client.updated_at.strftime('%d/%m/%y %H:%M') }})</small>
                         </td>
                         <td>
-                            <a href="{{ url_for('documents.view_pdf', id=doc.id) }}"
-                                class="btn btn-sm btn-outline-info me-1" target="_blank" title="Voir PDF"><i
-                                    class="fas fa-file-pdf"></i> PDF</a>
-                            <a href="{{ url_for('devis.edit', id=doc.id) }}" class="btn btn-sm btn-outline-primary me-1"
-                                title="Modifier"><i class="fas fa-edit"></i></a>
-
-                            {% set linked_invoice = None %}
-                            {% for gen_doc in doc.generated_documents %}
-                            {% if gen_doc.type == 'facture' %}
-                            {% set linked_invoice = gen_doc %}
-                            {% endif %}
-                            {% endfor %}
-
-                            {% if linked_invoice %}
-                            <span class="badge bg-success" title="Facture associée">
-                                <i class="fas fa-check-circle"></i> F: {{ linked_invoice.numero }}
-                            </span>
-                            {% else %}
-                            <a href="{{ url_for('factures.convert_from_devis', id=doc.id) }}"
-                                class="btn btn-sm btn-outline-success me-1"
-                                onclick="return confirm('Convertir ce devis en facture ?');"
-                                title="Convertir en Facture"><i class="fas fa-magic"></i></a>
-                            {% endif %}
-
-                            <form action="{{ url_for('devis.delete', id=doc.id) }}" method="POST" class="d-inline"
-                                onsubmit="return confirm('Supprimer ce devis ?');">
+                            {% if current_user.has_any_role(['admin', 'manager', 'client_admin']) %}
+                            <a href="{{ url_for('clients.edit', id=client.id) }}"
+                                class="btn btn-sm btn-outline-secondary me-1"><i class="fas fa-edit"></i></a>
+                            <form action="{{ url_for('clients.delete', id=client.id) }}" method="POST" class="d-inline"
+                                onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce client ?');">
                                 <button type="submit" class="btn btn-sm btn-outline-danger"><i
                                         class="fas fa-trash"></i></button>
                             </form>
+                            {% else %}
+                            <span class="badge bg-light text-dark">Lecture seule</span>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
@@ -93,7 +70,7 @@
             </table>
         </div>
         {% else %}
-        <p class="text-muted text-center py-4">Aucun devis enregistré.</p>
+        <p class="text-muted text-center py-4">Aucun client enregistré.</p>
         {% endif %}
     </div>
 </div>

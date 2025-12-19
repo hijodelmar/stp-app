@@ -11,7 +11,7 @@ bp = Blueprint('avoirs', __name__)
 
 @bp.route('/')
 @login_required
-@role_required(['avoir_admin', 'manager'])
+@role_required(['admin', 'manager', 'reporting', 'avoir_admin'])
 def index():
     q = request.args.get('q')
     if q:
@@ -28,7 +28,7 @@ def index():
 
 @bp.route('/add', methods=['GET', 'POST'])
 @login_required
-@role_required(['avoir_admin', 'manager'])
+@role_required(['admin', 'manager', 'avoir_admin'])
 def add():
     form = DocumentForm()
     form.client_id.choices = [(c.id, c.raison_sociale) for c in Client.query.order_by(Client.raison_sociale).all()]
@@ -80,7 +80,7 @@ def add():
 
 @bp.route('/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
-@role_required(['avoir_admin', 'manager'])
+@role_required(['admin', 'manager', 'avoir_admin'])
 def edit(id):
     document = Document.query.get_or_404(id)
     if document.type != 'avoir':
@@ -152,7 +152,7 @@ def choose_facture():
 
 @bp.route('/convert/<int:id>')
 @login_required
-@role_required(['avoir_admin', 'manager'])
+@role_required(['admin', 'manager', 'avoir_admin'])
 def convert_from_facture(id):
     facture = Document.query.get_or_404(id)
     if facture.type != 'facture':
@@ -196,7 +196,7 @@ def convert_from_facture(id):
 
 @bp.route('/delete/<int:id>', methods=['POST'])
 @login_required
-@role_required(['avoir_admin', 'manager'])
+@role_required(['admin', 'manager', 'avoir_admin'])
 def delete(id):
     document = Document.query.get_or_404(id)
     if document.type != 'avoir':
