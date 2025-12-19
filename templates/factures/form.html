@@ -12,13 +12,28 @@
                     {{ form.hidden_tag() }}
 
                     <div class="row mb-4">
-                        <div class="col-md-6">
+                        <div class="col-md-5">
                             {{ form.client_id.label(class="form-label") }}
                             {{ form.client_id(class="form-select") }}
                         </div>
                         <div class="col-md-3">
                             {{ form.date.label(class="form-label") }}
                             {{ form.date(class="form-control", type="date") }}
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <div class="d-flex flex-column gap-2 w-100">
+                                <div class="form-check form-switch">
+                                    {{ form.autoliquidation(class="form-check-input", id="autoliquidation",
+                                    onchange="calculateTotals()") }}
+                                    {{ form.autoliquidation.label(class="form-check-label fw-bold text-info") }}
+                                </div>
+                                {% if 'Facture' in title or 'Avoir' in title %}
+                                <div class="form-check form-switch">
+                                    {{ form.paid(class="form-check-input") }}
+                                    {{ form.paid.label(class="form-check-label fw-bold text-success") }}
+                                </div>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
             </div>

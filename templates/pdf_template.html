@@ -119,7 +119,11 @@
     <!-- DOCUMENT META -->
     <div
         style="clear: both; margin-top: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
-        <h2 style="margin: 0; color: #005c97;">{{ document.type|upper }} N° {{ document.numero }}</h2>
+        <h2 style="margin: 0 0 5px 0; color: #005c97;">{{ document.type|upper }} N° {{ document.numero }}</h2>
+        {% if document.type == 'avoir' %}
+        <p style="margin: 5px 0; color: #666; font-size: 11px;">Sur facture N° {{ document.source_document.numero if
+            document.source_document else '(Aucune facture liée)' }}</p>
+        {% endif %}
         {% if document.chantier_reference %}
         <p style="margin: 5px 0; font-size: 14px;">Référence Chantier : <strong>{{ document.chantier_reference
                 }}</strong></p>
@@ -127,10 +131,6 @@
         {% if document.client_reference and document.type != 'devis' %}
         <p style="margin: 5px 0; font-size: 13px;">Référence Client : <strong>{{ document.client_reference }}</strong>
         </p>
-        {% endif %}
-        {% if document.type == 'avoir' %}
-        <p style="margin: 0; color: #666; font-size: 11px;">Sur facture N° {{ document.source_document.numero if
-            document.source_document else '(Aucune facture liée)' }}</p>
         {% endif %}
         <p class="doc-meta" style="margin: 5px 0 0 0; color: #666;">
             Date d'émission : <strong>{{ document.date.strftime('%d/%m/%Y') }}</strong>
@@ -179,13 +179,16 @@
             </div>
             {% endif %}
             <div class="totals-row grand-total clearfix">
-                <span style="float: left;">Net à Payer :</span>
+                <span style="float: left;">{% if document.autoliquidation %}Net à Payer (HT) :{% else %}Net à Payer :{%
+                    endif %}</span>
                 <span style="float: right;">{{ "%.2f"|format(document.montant_ttc|default(0)) }} €</span>
             </div>
 
+            {% if document.autoliquidation %}
             <div style="margin-top: 15px; font-style: italic; font-size: 10px; text-align: right; color: #555;">
                 Auto liquidation de la TVA suivant CGI, Ann. II, art.242 Nonies A-I-13
             </div>
+            {% endif %}
         </div>
     </div>
 

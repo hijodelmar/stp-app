@@ -61,7 +61,12 @@
                         </td>
                         <td>
                             <small class="d-block text-muted">HT: {{ "%.2f"|format(doc.montant_ht) }} €</small>
+                            {% if doc.autoliquidation %}
+                            <span class="badge bg-info text-dark small"><i class="fas fa-hand-holding-usd me-1"></i>
+                                Auto-liquidation</span>
+                            {% else %}
                             <div class="fw-bold">TTC: {{ "%.2f"|format(doc.montant_ttc) }} €</div>
+                            {% endif %}
                         </td>
                         <td>
                             <a href="{{ url_for('documents.view_pdf', id=doc.id) }}"

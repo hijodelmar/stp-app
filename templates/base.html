@@ -66,6 +66,23 @@
                                 class="fas fa-user-shield me-1"></i> Utilisateurs</a>
                     </li>
                     {% endif %}
+
+                    <!-- Active Users Live Badge with Dropdown -->
+                    <li class="nav-item dropdown d-flex align-items-center ms-lg-2 my-2 my-lg-0" id="activeUsersNav">
+                        <a class="nav-link dropdown-toggle py-0" href="#" id="activeUsersBadge" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            <span class="badge rounded-pill bg-success text-white">
+                                <i class="fas fa-circle me-1 small"></i> <span id="activeUsersCount">1</span> Actif(s)
+                            </span>
+                        </a>
+                        <ul class="dropdown-menu shadow border-0" aria-labelledby="activeUsersBadge"
+                            id="activeUsersList">
+                            <li><span class="dropdown-item-text small text-muted">Utilisateurs en ligne</span></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                        </ul>
+                    </li>
                     {% endif %}
                 </ul>
                 <ul class="navbar-nav">
@@ -134,9 +151,84 @@
         </div>
     </footer>
 
+    <!-- Toast Container for Live Notifications -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="liveLoginToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header bg-primary text-white">
+                <i class="fas fa-user-plus me-2"></i>
+                <strong class="me-auto">Nouvelle Connexion</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"
+                    aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="toastMessage">
+                Un utilisateur vient de se connecter.
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+    {% if current_user.is_authenticated %}
+    <script>
+        let lastKnownUsers = [];
+        const myId = {{ current_user.id }};
+
+        function pollActiveUsers() {
+            fetch('{{ url_for("active_users_api") }}')
+                .then(response => response.json())
+                .then(data => {
+                    // Update counter
+                    const countElem = document.getElementById('activeUsersCount');
+                    if (countElem) countElem.innerText = data.count;
+
+                    // Update list of names
+                    const listElem = document.getElementById('activeUsersList');
+                    if (listElem) {
+                        // Clear existing list items (after the divider)
+                        while (listElem.children.length > 2) {
+                            listElem.removeChild(listElem.lastChild);
+                        }
+
+                        data.users.forEach(user => {
+                            const li = document.createElement('li');
+                            li.innerHTML = `<span class="dropdown-item small"><i class="fas fa-user-check me-2 text-success"></i> ${user.username} ${user.is_me ? '<span class="text-primary">(Moi)</span>' : ''}</span>`;
+                            listElem.appendChild(li);
+                        });
+                    }
+
+                    // Detect new logins
+                    const newUsernames = data.users
+                        .filter(u => u.id !== myId)
+                        .map(u => u.username);
+
+                    newUsernames.forEach(username => {
+                        if (!lastKnownUsers.includes(username)) {
+                            showNotification(username);
+                        }
+                    });
+
+                    lastKnownUsers = newUsernames;
+                })
+                .catch(err => console.error('Error polling active users:', err));
+        }
+
+        function showNotification(username) {
+            const toastElem = document.getElementById('liveLoginToast');
+            const messageElem = document.getElementById('toastMessage');
+            if (toastElem && messageElem) {
+                messageElem.innerHTML = `L'utilisateur <strong>${username}</strong> est maintenant en ligne.`;
+                const toast = new bootstrap.Toast(toastElem);
+                toast.show();
+            }
+        }
+
+        // Poll every 10 seconds
+        setInterval(pollActiveUsers, 10000);
+        pollActiveUsers(); // Initial check
+    </script>
+    {% endif %}
 </body>
 
 </html>

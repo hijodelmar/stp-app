@@ -1,6 +1,6 @@
 import os
-from flask import Flask, render_template, request
-from flask_login import login_required
+from flask import Flask, render_template, request, session, redirect, url_for, jsonify
+from flask_login import login_required, current_user, logout_user
 from config import Config
 from extensions import db, login_manager
 
@@ -57,6 +57,43 @@ def create_app(config_class=Config):
 
     from routes.users import bp as users_bp
     app.register_blueprint(users_bp, url_prefix='/users')
+
+    @app.before_request
+    def before_request():
+        if current_user.is_authenticated:
+            # Make session permanent to respect PERMANENT_SESSION_LIFETIME
+            session.permanent = True
+            
+            # 1. Check for unique session enforcement
+            if 'sid' in session and current_user.current_session_id:
+                if session['sid'] != current_user.current_session_id:
+                    logout_user()
+                    from flask import flash
+                    flash("Votre session a été fermée car vous vous êtes connecté sur un autre appareil.", "warning")
+                    return redirect(url_for('auth.login'))
+
+            # 2. Update last active timestamp
+            from datetime import datetime
+            current_user.last_active = datetime.utcnow()
+            db.session.commit()
+
+    @app.route('/api/active-users')
+    @login_required
+    def active_users_api():
+        from models import User
+        from datetime import datetime, timedelta
+        # Consider users active if they were seen in the last 5 minutes
+        five_mins_ago = datetime.utcnow() - timedelta(minutes=5)
+        active_users = User.query.filter(User.last_active >= five_mins_ago).all()
+        
+        return jsonify({
+            'count': len(active_users),
+            'users': [{
+                'id': u.id,
+                'username': u.username,
+                'is_me': u.id == current_user.id
+            } for u in active_users]
+        })
 
     def get_stats():
         from models import Document
@@ -118,6 +155,14 @@ def create_app(config_class=Config):
         
         total_tva = db.session.query(func.sum(Document.tva)).filter(
             Document.type == 'facture',
+            Document.date >= start_date,
+            Document.date < end_date,
+            ~Document.id.in_(avoir_sources)
+        ).scalar() or 0.0
+
+        total_autoliq = db.session.query(func.sum(Document.montant_ht)).filter(
+            Document.type == 'facture',
+            Document.autoliquidation == True,
             Document.date >= start_date,
             Document.date < end_date,
             ~Document.id.in_(avoir_sources)
@@ -189,6 +234,7 @@ def create_app(config_class=Config):
             'total_ht': total_ht,
             'total_ttc': total_ttc,
             'total_tva': total_tva,
+            'total_autoliq': total_autoliq,
             'total_regle': total_regle,
             'total_impaye': total_impaye,
             'monthly_labels': labels,

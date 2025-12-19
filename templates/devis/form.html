@@ -12,7 +12,7 @@
                     {{ form.hidden_tag() }}
 
                     <div class="row mb-4">
-                        <div class="col-md-6">
+                        <div class="col-md-5">
                             {{ form.client_id.label(class="form-label") }}
                             {{ form.client_id(class="form-select") }}
                         </div>
@@ -20,16 +20,22 @@
                             {{ form.date.label(class="form-label") }}
                             {{ form.date(class="form-control", type="date") }}
                         </div>
-                        <div class="col-md-3 d-flex align-items-end">
-                            <div class="form-check mb-2">
-                                {{ form.autoliquidation(class="form-check-input") }}
-                                {{ form.autoliquidation.label(class="form-check-label") }}
+                        <div class="col-md-4 d-flex align-items-end">
+                            <div class="form-check form-switch mb-2">
+                                {{ form.autoliquidation(class="form-check-input", id="autoliquidation",
+                                onchange="calculateTotals()") }}
+                                {{ form.autoliquidation.label(class="form-check-label fw-bold text-info") }}
                             </div>
                         </div>
                     </div>
 
                     <div class="row mb-4">
-                        <div class="col-md-12">
+                        <div class="col-md-6">
+                            {{ form.client_reference.label(class="form-label") }}
+                            {{ form.client_reference(class="form-control", placeholder="Optionnel (ex: BC-12345)") }}
+                            <div class="form-text">Référence interne du client (30 caractères max).</div>
+                        </div>
+                        <div class="col-md-6">
                             {{ form.chantier_reference.label(class="form-label") }}
                             {{ form.chantier_reference(class="form-control", placeholder="Optionnel (ex: Chantier
                             Dupont)") }}

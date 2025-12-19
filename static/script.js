@@ -55,7 +55,8 @@ document.addEventListener('DOMContentLoaded', function () {
             totalHT += calculateRowTotal(row);
         });
 
-        const autoliq = document.getElementById('autoliquidation').checked;
+        const autoliqCheckbox = document.getElementById('autoliquidation');
+        const autoliq = autoliqCheckbox ? autoliqCheckbox.checked : false;
         const tva = autoliq ? 0 : totalHT * 0.20;
         const totalTTC = totalHT + tva;
 
@@ -64,12 +65,14 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('total-ttc').textContent = totalTTC.toFixed(2) + ' €';
 
         const rowTva = document.getElementById('row-tva');
+        const ttcLabel = document.querySelector('td[id="total-ttc"]').previousElementSibling.querySelector('strong');
+
         if (autoliq) {
-            rowTva.style.textDecoration = 'line-through';
-            rowTva.style.opacity = '0.5';
+            if (rowTva) rowTva.classList.add('d-none');
+            if (ttcLabel) ttcLabel.textContent = 'Total HT (Autoliq) :';
         } else {
-            rowTva.style.textDecoration = 'none';
-            rowTva.style.opacity = '1';
+            if (rowTva) rowTva.classList.remove('d-none');
+            if (ttcLabel) ttcLabel.textContent = 'Total TTC :';
         }
     }
 });

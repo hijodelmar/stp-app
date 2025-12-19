@@ -7,3 +7,8 @@ class Config:
         'sqlite:///' + os.path.join(basedir, 'instance', 'app.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOAD_FOLDER = os.path.join(basedir, 'archives')
+    
+    # Session configurations
+    from datetime import timedelta
+    PERMANENT_SESSION_LIFETIME = timedelta(minutes=60)
+    SESSION_REFRESH_EACH_REQUEST = True

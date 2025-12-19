@@ -217,6 +217,12 @@
                 <span class="stats-value">{{ "%.2f"|format(stats.total_tva) }} €</span>
             </td>
         </tr>
+        <tr>
+            <td colspan="4" style="text-align: left; padding: 10px; border: none;">
+                <span class="stats-label">Dont CA réalisé en Auto-liquidation : <strong style="color: #7b1fa2;">{{
+                        "%.2f"|format(stats.total_autoliq) }} €</strong></span>
+            </td>
+        </tr>
     </table>
 
     <div class="section-title">DÉTAIL CHRONOLOGIQUE DU CA</div>

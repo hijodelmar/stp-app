@@ -9,6 +9,8 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(128))
     role = db.Column(db.String(20), nullable=False, default='manager') 
     # Roles: 'client_admin', 'devis_admin', 'facture_admin', 'avoir_admin', 'manager', 'admin'
+    last_active = db.Column(db.DateTime)
+    current_session_id = db.Column(db.String(36))
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
