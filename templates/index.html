@@ -2,9 +2,14 @@
 
 {% block content %}
 <div class="row mb-4 align-items-center">
-    <div class="col-md-6">
+    <div class="col-md-6 d-flex align-items-center">
         <h2 class="fw-bold mb-0"><i class="fas fa-chart-line text-primary me-2"></i>Tableau de Bord</h2>
-        <p class="text-muted mb-0">Résumé financier : <span class="badge bg-primary">{{ stats.filter_label }}</span></p>
+        <button id="privacyToggle" class="btn btn-link text-muted privacy-toggle ms-2 p-0"
+            title="Mode Discret (Masquer les valeurs)">
+            <i class="fas fa-eye"></i>
+        </button>
+        <p class="text-muted mb-0 ms-3">Résumé financier : <span class="badge bg-primary">{{ stats.filter_label
+                }}</span></p>
     </div>
     <div class="col-md-6 text-md-end mt-3 mt-md-0">
         <form class="d-flex flex-wrap justify-content-md-end gap-2" method="GET" action="/">
@@ -58,7 +63,8 @@
                     </div>
                     <div class="ms-3">
                         <small class="text-muted d-block">Chiffre d'Affaires HT</small>
-                        <h4 class="mb-0 fw-bold">{{ "%.2f"|format(stats.total_ht) }} €</h4>
+                        <h4 class="mb-0 fw-bold"><span class="privacy-value">{{ "%.2f"|format(stats.total_ht) }}
+                                €</span></h4>
                     </div>
                 </div>
             </div>
@@ -73,7 +79,8 @@
                     </div>
                     <div class="ms-3">
                         <small class="text-muted d-block">CA TTC encaissé</small>
-                        <h4 class="mb-0 fw-bold" style="color: #002366;">{{ "%.2f"|format(stats.total_regle) }} €</h4>
+                        <h4 class="mb-0 fw-bold" style="color: #002366;"><span class="privacy-value">{{
+                                "%.2f"|format(stats.total_regle) }} €</span></h4>
                     </div>
                 </div>
             </div>
@@ -88,7 +95,8 @@
                     </div>
                     <div class="ms-3">
                         <small class="text-muted d-block">Total Impayé</small>
-                        <h4 class="mb-0 fw-bold" style="color: #D4AF37;">{{ "%.2f"|format(stats.total_impaye) }} €</h4>
+                        <h4 class="mb-0 fw-bold" style="color: #D4AF37;"><span class="privacy-value">{{
+                                "%.2f"|format(stats.total_impaye) }} €</span></h4>
                     </div>
                 </div>
             </div>
@@ -103,7 +111,8 @@
                     </div>
                     <div class="ms-3">
                         <small class="text-muted d-block">TVA Collectée</small>
-                        <h4 class="mb-0 fw-bold" style="color: #00695c;">{{ "%.2f"|format(stats.total_tva) }} €</h4>
+                        <h4 class="mb-0 fw-bold" style="color: #00695c;"><span class="privacy-value">{{
+                                "%.2f"|format(stats.total_tva) }} €</span></h4>
                     </div>
                 </div>
             </div>
@@ -118,7 +127,8 @@
                     </div>
                     <div class="ms-3">
                         <small class="text-muted d-block">CA en Auto-liquidation</small>
-                        <h4 class="mb-0 fw-bold" style="color: #7b1fa2;">{{ "%.2f"|format(stats.total_autoliq) }} €</h4>
+                        <h4 class="mb-0 fw-bold" style="color: #7b1fa2;"><span class="privacy-value">{{
+                                "%.2f"|format(stats.total_autoliq) }} €</span></h4>
                     </div>
                 </div>
             </div>
@@ -287,6 +297,36 @@
             }
         }
     }
+    });
+
+    // Privacy Mode Toggle Logic
+    const privacyToggle = document.getElementById('privacyToggle');
+    const rootElement = document.documentElement;
+    const eyeIcon = privacyToggle.querySelector('i');
+
+    function updatePrivacyUI(active) {
+        if (active) {
+            rootElement.classList.add('privacy-active');
+            eyeIcon.classList.remove('fa-eye');
+            eyeIcon.classList.add('fa-eye-slash');
+            privacyToggle.title = "Désactiver le mode discret";
+        } else {
+            rootElement.classList.remove('privacy-active');
+            eyeIcon.classList.remove('fa-eye-slash');
+            eyeIcon.classList.add('fa-eye');
+            privacyToggle.title = "Mode Discret (Masquer les valeurs)";
+        }
+    }
+
+    // Sync UI with the state already applied in the head
+    const isPrivacyActive = localStorage.getItem('dashboardPrivacy') === 'true';
+    updatePrivacyUI(isPrivacyActive);
+
+    privacyToggle.addEventListener('click', () => {
+        const currentlyActive = rootElement.classList.contains('privacy-active');
+        const newState = !currentlyActive;
+        localStorage.setItem('dashboardPrivacy', newState);
+        updatePrivacyUI(newState);
     });
 </script>
 {% endblock %}

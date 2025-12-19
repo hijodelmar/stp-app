@@ -45,7 +45,13 @@
                 <tbody>
                     {% for doc in documents %}
                     <tr>
-                        <td><span class="badge bg-warning text-dark">{{ doc.numero }}</span></td>
+                        <td>
+                            <strong class="text-primary">{{ doc.numero }}</strong>
+                            {% if doc.sent_at %}
+                            <i class="fas fa-envelope-circle-check text-success ms-1"
+                                title="Envoyé par email le {{ doc.sent_at.strftime('%d/%m/%Y à %H:%M') }}"></i>
+                            {% endif %}
+                        </td>
                         <td>{{ doc.date.strftime('%d/%m/%Y') }}</td>
                         <td>{{ doc.client.raison_sociale }}</td>
                         <td>
@@ -74,6 +80,16 @@
                             <a href="{{ url_for('documents.view_pdf', id=doc.id) }}"
                                 class="btn btn-sm btn-outline-info me-1" target="_blank"><i class="fas fa-file-pdf"></i>
                                 PDF</a>
+
+                            {% if doc.client.email and current_user.has_any_role(['admin', 'manager', 'avoir_admin']) %}
+                            <form action="{{ url_for('mail.send_document', id=doc.id) }}" method="POST" class="d-inline"
+                                onsubmit="return confirm('Envoyer cet avoir par email à {{ doc.client.email }} ?');">
+                                <button type="submit" class="btn btn-sm btn-outline-dark me-1"
+                                    title="Envoyer par email">
+                                    <i class="fas fa-envelope"></i>
+                                </button>
+                            </form>
+                            {% endif %}
                             {% if current_user.has_any_role(['admin', 'manager', 'avoir_admin']) %}
                             <a href="{{ url_for('avoirs.edit', id=doc.id) }}"
                                 class="btn btn-sm btn-outline-primary me-1" title="Modifier"><i

@@ -1,8 +1,33 @@
 /* Custom styles */
+.cursor-pointer {
+    cursor: pointer;
+}
+
 body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+}
+
+/* Privacy Mode Utilities */
+.privacy-value {
+    transition: filter 0.3s ease, opacity 0.3s ease;
+}
+
+.privacy-active .privacy-value {
+    filter: blur(8px);
+    opacity: 0.7;
+    user-select: none;
+    pointer-events: none;
+}
+
+.privacy-toggle {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.privacy-toggle:hover {
+    transform: scale(1.1);
 }
 
 .main-content {

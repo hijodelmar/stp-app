@@ -91,6 +91,7 @@ class Document(db.Model):
     client_reference = db.Column(db.String(30))  # Référence client (max 30 chars)
     chantier_reference = db.Column(db.String(50)) # Référence du chantier (max 50 chars)
     pdf_path = db.Column(db.String(200)) # Chemin vers le fichier PDF archivé
+    sent_at = db.Column(db.DateTime, nullable=True) # Date du dernier envoi par email
     
     # Audit trail
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -136,6 +137,15 @@ class CompanyInfo(db.Model):
     iban = db.Column(db.String(50), nullable=True)
     footer_info = db.Column(db.Text, nullable=True)
     logo_path = db.Column(db.String(200), nullable=True) 
+
+    # Configuration Email (SMTP)
+    smtp_server = db.Column(db.String(100), nullable=True)
+    smtp_port = db.Column(db.Integer, nullable=True, default=587)
+    smtp_user = db.Column(db.String(100), nullable=True)
+    smtp_password = db.Column(db.String(100), nullable=True)
+    smtp_use_tls = db.Column(db.Boolean, default=True)
+    smtp_use_ssl = db.Column(db.Boolean, default=False)
+    mail_default_sender = db.Column(db.String(100), nullable=True)
 
     def __repr__(self):
         return f'<CompanyInfo {self.nom}>'

@@ -46,7 +46,13 @@
                 <tbody>
                     {% for doc in documents %}
                     <tr>
-                        <td><span class="badge bg-success">{{ doc.numero }}</span></td>
+                        <td>
+                            <strong class="text-primary">{{ doc.numero }}</strong>
+                            {% if doc.sent_at %}
+                            <i class="fas fa-envelope-circle-check text-success ms-1"
+                                title="Envoyé par email le {{ doc.sent_at.strftime('%d/%m/%Y à %H:%M') }}"></i>
+                            {% endif %}
+                        </td>
                         <td>{{ doc.date.strftime('%d/%m/%Y') }}</td>
                         <td>{{ doc.client.raison_sociale }}</td>
                         <td>
@@ -75,14 +81,15 @@
                             {% set has_write_access = current_user.has_any_role(['admin', 'manager', 'facture_admin'])
                             %}
                             {% if doc.paid %}
-                            <span class="badge bg-success {{ 'payment-status' if has_write_access }}"
-                                data-id="{{ doc.id }}" style="{{ 'cursor: pointer;' if has_write_access }}"
+                            <span class="badge bg-success {{ 'payment-status cursor-pointer' if has_write_access }}"
+                                data-id="{{ doc.id }}"
                                 title="{{ 'Double-cliquez pour changer' if has_write_access else 'Réglée' }}">
                                 <i class="fas fa-check-circle"></i> Reglée
                             </span>
                             {% else %}
-                            <span class="badge bg-warning text-dark {{ 'payment-status' if has_write_access }}"
-                                data-id="{{ doc.id }}" style="{{ 'cursor: pointer;' if has_write_access }}"
+                            <span
+                                class="badge bg-warning text-dark {{ 'payment-status cursor-pointer' if has_write_access }}"
+                                data-id="{{ doc.id }}"
                                 title="{{ 'Double-cliquez pour changer' if has_write_access else 'Non réglée' }}">
                                 <i class="fas fa-clock"></i> Non réglée
                             </span>
@@ -101,6 +108,17 @@
                             <a href="{{ url_for('documents.view_pdf', id=doc.id) }}"
                                 class="btn btn-sm btn-outline-info me-1" target="_blank"><i class="fas fa-file-pdf"></i>
                                 PDF</a>
+
+                            {% if doc.client.email and current_user.has_any_role(['admin', 'manager', 'facture_admin'])
+                            %}
+                            <form action="{{ url_for('mail.send_document', id=doc.id) }}" method="POST" class="d-inline"
+                                onsubmit="return confirm('Envoyer cette facture par email à {{ doc.client.email }} ?');">
+                                <button type="submit" class="btn btn-sm btn-outline-dark me-1"
+                                    title="Envoyer par email">
+                                    <i class="fas fa-envelope"></i>
+                                </button>
+                            </form>
+                            {% endif %}
                             {% if current_user.has_any_role(['admin', 'manager', 'facture_admin']) %}
                             <a href="{{ url_for('factures.edit', id=doc.id) }}"
                                 class="btn btn-sm btn-outline-primary me-1" title="Modifier"><i

@@ -49,4 +49,14 @@ class CompanyInfoForm(FlaskForm):
     iban = StringField('IBAN')
     footer_info = TextAreaField('Pied de page (Mentions Légales)', render_kw={"rows": 4})
     logo = FileField('Logo (PNG/JPG)', validators=[FileAllowed(['jpg', 'png', 'jpeg'], 'Images uniquement!')])
+    
+    # Email Config
+    smtp_server = StringField('Serveur SMTP (ex: smtp.gmail.com)')
+    smtp_port = IntegerField('Port SMTP (ex: 587)', validators=[Optional()])
+    smtp_user = StringField('Utilisateur SMTP (Email)', validators=[Optional(), Email()])
+    smtp_password = StringField('Mot de passe SMTP', render_kw={"type": "password"})
+    smtp_use_tls = BooleanField('Utiliser TLS (STARTTLS)', default=True)
+    smtp_use_ssl = BooleanField('Utiliser SSL', default=False)
+    mail_default_sender = StringField('Nom de l\'expéditeur (ex: STP Gestion)')
+    
     submit = SubmitField('Enregistrer')

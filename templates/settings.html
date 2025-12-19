@@ -87,6 +87,61 @@
                         </div>
                     </div>
 
+                    <div class="card bg-light mb-4 shadow-sm border-0">
+                        <div class="card-header bg-dark text-white rounded-top">
+                            <h5 class="mb-0"><i class="fas fa-envelope me-2"></i>Configuration Email (SMTP)</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-8">
+                                    <label class="form-label">{{ form.smtp_server.label }}</label>
+                                    {{ form.smtp_server(class="form-control", placeholder="ex: smtp.gmail.com") }}
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">{{ form.smtp_port.label }}</label>
+                                    {{ form.smtp_port(class="form-control", placeholder="587") }}
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">{{ form.smtp_user.label }}</label>
+                                    {{ form.smtp_user(class="form-control", placeholder="votre@email.com") }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">{{ form.smtp_password.label }}</label>
+                                    {{ form.smtp_password(class="form-control") }}
+                                    <div class="form-text">Si vous utilisez Gmail, créez un "Mot de passe
+                                        d'application".</div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">{{ form.mail_default_sender.label }}</label>
+                                {{ form.mail_default_sender(class="form-control", placeholder="STP Gestion
+                                <votre@email.com>") }}
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        {{ form.smtp_use_tls(class="form-check-input") }}
+                                        <label class="form-check-label">{{ form.smtp_use_tls.label }}</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        {{ form.smtp_use_ssl(class="form-check-input") }}
+                                        <label class="form-check-label">{{ form.smtp_use_ssl.label }}</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <div class="alert alert-info py-2 small">
+                                    <i class="fas fa-info-circle me-1"></i> Ces réglages sont nécessaires pour envoyer
+                                    les PDFs directement par email aux clients.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="d-grid gap-2">
                         {{ form.submit(class="btn btn-primary btn-lg") }}
                     </div>

@@ -3,6 +3,30 @@ from flask import render_template, current_app
 from xhtml2pdf import pisa
 from models import CompanyInfo
 from extensions import db
+from io import BytesIO
+
+def generate_pdf_bytes(document):
+    """
+    Génère le PDF pour un document donné et retourne les octets (bytes).
+    """
+    company_info = CompanyInfo.query.first()
+    static_root = os.path.join(current_app.root_path, 'static')
+    logo_abs_path = ""
+    if company_info and company_info.logo_path:
+        logo_abs_path = os.path.join(static_root, company_info.logo_path)
+    
+    html_string = render_template('pdf_template.html', 
+                                document=document, 
+                                info=company_info,
+                                logo_abs_path=logo_abs_path)
+    
+    pdf_buffer = BytesIO()
+    pisa_status = pisa.CreatePDF(src=html_string, dest=pdf_buffer)
+    
+    if pisa_status.err:
+        raise Exception(f"Erreur lors de la génération PDF (code {pisa_status.err})")
+    
+    return pdf_buffer.getvalue()
 
 def generate_pdf(document):
     """
