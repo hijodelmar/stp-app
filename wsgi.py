@@ -3,7 +3,7 @@ import os
 
 # IMPORTANT: Update this path with your PythonAnywhere username
 # Example: /home/yourusername/STPAPP
-project_home = '/home/YOUR_USERNAME_HERE/STPAPP'
+project_home = '/home/STPAPP/STPAPP'
 
 # Importer l'application Flask
 from app import create_app

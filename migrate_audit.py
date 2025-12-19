@@ -1,14 +1,23 @@
 import sqlite3
 import os
 
-db_path = 'instance/app.db'
+# Robust path detection: find instance folder Relative to this script
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+db_path = os.path.join(BASE_DIR, 'instance', 'app.db')
 
 def migrate():
+    print(f"Tentative de migration sur : {db_path}")
     if not os.path.exists(db_path):
-        print(f"Erreur : La base de données {db_path} n'existe pas.")
-        return
+        # Fallback to local 'instance/app.db' if absolute path fails for some reason
+        db_path_fallback = 'instance/app.db'
+        if not os.path.exists(db_path_fallback):
+            print(f"Erreur : La base de données n'a pas été trouvée à {db_path} ou {db_path_fallback}")
+            return
+        actual_db = db_path_fallback
+    else:
+        actual_db = db_path
 
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(actual_db)
     cursor = conn.cursor()
 
     print(f"Migration de la base de données : {db_path}")
