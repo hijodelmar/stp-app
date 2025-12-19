@@ -154,14 +154,14 @@
     <!-- Toast Container for Live Notifications -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3">
         <div id="liveLoginToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="toast-header bg-primary text-white">
-                <i class="fas fa-user-plus me-2"></i>
-                <strong class="me-auto">Nouvelle Connexion</strong>
+            <div class="toast-header" id="toastHeader">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong class="me-auto" id="toastTitle">Notification</strong>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"
                     aria-label="Close"></button>
             </div>
             <div class="toast-body" id="toastMessage">
-                Un utilisateur vient de se connecter.
+                Notification système.
             </div>
         </div>
     </div>
@@ -172,7 +172,9 @@
 
     {% if current_user.is_authenticated %}
     <script>
-        let lastKnownUsers = [];
+        let lastKnownUserIds = [];
+        let userCache = new Map(); // Cache ID -> Username for logout notifications
+        let isFirstLoad = true;
         const myId = {{ current_user.id }};
 
         function pollActiveUsers() {
@@ -186,7 +188,6 @@
                     // Update list of names
                     const listElem = document.getElementById('activeUsersList');
                     if (listElem) {
-                        // Clear existing list items (after the divider)
                         while (listElem.children.length > 2) {
                             listElem.removeChild(listElem.lastChild);
                         }
@@ -195,38 +196,61 @@
                             const li = document.createElement('li');
                             li.innerHTML = `<span class="dropdown-item small"><i class="fas fa-user-check me-2 text-success"></i> ${user.username} ${user.is_me ? '<span class="text-primary">(Moi)</span>' : ''}</span>`;
                             listElem.appendChild(li);
+
+                            // Update cache
+                            userCache.set(user.id, user.username);
                         });
                     }
 
-                    // Detect new logins
-                    const newUsernames = data.users
-                        .filter(u => u.id !== myId)
-                        .map(u => u.username);
+                    const currentUserIds = data.users.map(u => u.id);
 
-                    newUsernames.forEach(username => {
-                        if (!lastKnownUsers.includes(username)) {
-                            showNotification(username);
-                        }
-                    });
+                    if (!isFirstLoad) {
+                        // Detect logins
+                        data.users.forEach(user => {
+                            if (user.id !== myId && !lastKnownUserIds.includes(user.id)) {
+                                showNotification(user.username, 'login');
+                            }
+                        });
 
-                    lastKnownUsers = newUsernames;
+                        // Detect logouts
+                        lastKnownUserIds.forEach(oldId => {
+                            if (oldId !== myId && !currentUserIds.includes(oldId)) {
+                                const username = userCache.get(oldId) || "Intervenant";
+                                showNotification(username, 'logout');
+                            }
+                        });
+                    }
+
+                    lastKnownUserIds = currentUserIds;
+                    isFirstLoad = false;
                 })
                 .catch(err => console.error('Error polling active users:', err));
         }
 
-        function showNotification(username) {
+        function showNotification(username, type) {
             const toastElem = document.getElementById('liveLoginToast');
+            const headerElem = document.getElementById('toastHeader');
+            const titleElem = document.getElementById('toastTitle');
             const messageElem = document.getElementById('toastMessage');
-            if (toastElem && messageElem) {
-                messageElem.innerHTML = `L'utilisateur <strong>${username}</strong> est maintenant en ligne.`;
+
+            if (toastElem && headerElem && titleElem && messageElem) {
+                if (type === 'login') {
+                    headerElem.className = "toast-header bg-success text-white";
+                    titleElem.innerText = "Connexion";
+                    messageElem.innerHTML = `<i class="fas fa-user-plus me-2"></i> L'utilisateur <strong>${username}</strong> est maintenant en ligne.`;
+                } else {
+                    headerElem.className = "toast-header bg-secondary text-white";
+                    titleElem.innerText = "Déconnexion";
+                    messageElem.innerHTML = `<i class="fas fa-user-minus me-2"></i> L'utilisateur <strong>${username}</strong> s'est déconnecté.`;
+                }
+
                 const toast = new bootstrap.Toast(toastElem);
                 toast.show();
             }
         }
 
-        // Poll every 10 seconds
         setInterval(pollActiveUsers, 10000);
-        pollActiveUsers(); // Initial check
+        pollActiveUsers();
     </script>
     {% endif %}
 </body>
