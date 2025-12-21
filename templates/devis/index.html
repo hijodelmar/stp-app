@@ -95,10 +95,12 @@
                                 <i class="fas fa-check-circle"></i> F: {{ linked_invoice.numero }}
                             </span>
                             {% else %}
-                            <a href="{{ url_for('factures.convert_from_devis', id=doc.id) }}"
-                                class="btn btn-sm btn-outline-success me-1"
-                                onclick="return confirm('Convertir ce devis en facture ?');"
-                                title="Convertir en Facture"><i class="fas fa-magic"></i></a>
+                            <!-- BOUTON CONVERSION MODAL -->
+                            <button type="button" class="btn btn-sm btn-outline-success me-1" data-bs-toggle="modal"
+                                data-bs-target="#convertModal" data-devis-id="{{ doc.id }}"
+                                data-devis-numero="{{ doc.numero }}" title="Convertir en Facture">
+                                <i class="fas fa-magic"></i>
+                            </button>
                             {% endif %}
 
                             <form action="{{ url_for('devis.delete', id=doc.id) }}" method="POST" class="d-inline"
@@ -120,4 +122,53 @@
         {% endif %}
     </div>
 </div>
+
+<!-- MODAL DE CONVERSION -->
+<div class="modal fade" id="convertModal" tabindex="-1" aria-labelledby="convertModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="convertModalLabel">Convertir Devis en Facture</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="convertForm" action="" method="POST">
+                <div class="modal-body">
+                    <p>Vous êtes sur le point de convertir le devis <strong id="modalDevisNum"></strong> en facture.</p>
+                    <div class="mb-3">
+                        <label for="client_reference" class="form-label">Référence Client <span
+                                class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="client_reference" name="client_reference"
+                            placeholder="Ex: BC-2025-001" required>
+                        <div class="form-text">Cette référence est obligatoire pour la facture.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-success">Générer la Facture</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    var convertModal = document.getElementById('convertModal');
+    convertModal.addEventListener('show.bs.modal', function (event) {
+        // Button that triggered the modal
+        var button = event.relatedTarget;
+        // Extract info from data-bs-* attributes
+        var devisId = button.getAttribute('data-devis-id');
+        var devisNum = button.getAttribute('data-devis-numero');
+
+        // Update the modal's content.
+        var modalTitle = convertModal.querySelector('.modal-title');
+        var modalDevisNum = convertModal.querySelector('#modalDevisNum');
+        var convertForm = convertModal.querySelector('#convertForm');
+
+        modalDevisNum.textContent = devisNum;
+
+        // Update URL action
+        convertForm.action = '/factures/convert/' + devisId;
+    });
+</script>
 {% endblock %}

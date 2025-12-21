@@ -87,12 +87,18 @@
                                 <i class="fas fa-check-circle"></i> Reglée
                             </span>
                             {% else %}
+                            {% if doc.generated_documents %}
+                            <span class="badge bg-warning text-dark" title="Facture annulée par Avoir (Verrouillée)">
+                                <i class="fas fa-ban"></i> Non réglée
+                            </span>
+                            {% else %}
                             <span
                                 class="badge bg-warning text-dark {{ 'payment-status cursor-pointer' if has_write_access }}"
                                 data-id="{{ doc.id }}"
                                 title="{{ 'Double-cliquez pour changer' if has_write_access else 'Non réglée' }}">
                                 <i class="fas fa-clock"></i> Non réglée
                             </span>
+                            {% endif %}
                             {% endif %}
                         </td>
                         <td>

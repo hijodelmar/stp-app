@@ -1,5 +1,5 @@
 from datetime import datetime
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, abort
 from extensions import db
 from models import Document, LigneDocument, Client
 from forms import DocumentForm
@@ -35,6 +35,10 @@ def add():
     form.client_id.choices = [(c.id, c.raison_sociale) for c in Client.query.order_by(Client.raison_sociale).all()]
 
     if form.validate_on_submit():
+        if not form.client_reference.data:
+            flash("La référence client est obligatoire pour une facture.", "danger")
+            return render_template('factures/form.html', form=form, title="Nouvelle Facture")
+
         year = datetime.now().year
         count = Document.query.filter(Document.numero.like(f'F-{year}-%')).count()
         numero = f'F-{year}-{count + 1:04d}'
@@ -97,6 +101,10 @@ def edit(id):
             form.date.data = document.date.strftime('%Y-%m-%d')
 
     if form.validate_on_submit():
+        if not form.client_reference.data:
+            flash("La référence client est obligatoire pour une facture.", "danger")
+            return render_template('factures/form.html', form=form, title=f"Modifier Facture {document.numero}")
+
         # Supprimer l'ancien PDF car le document va être modifié
         from services.pdf_generator import delete_old_pdf
         delete_old_pdf(document)
@@ -160,25 +168,19 @@ def delete(id):
     db.session.commit()
     flash('Facture supprimée.', 'info')
     return redirect(url_for('factures.index'))
-    
-    # If there are files (PDFs), we could delete them here too, but for safety/archiving we keep them.
-    # To delete:
-    # if document.pdf_path and os.path.exists(os.path.join(current_app.config['UPLOAD_FOLDER'], document.pdf_path)):
-    #    os.remove(...)
-    db.session.delete(document)
-    db.session.commit()
-    flash('Facture supprimée.', 'info')
-    return redirect(url_for('factures.index'))
 
 @bp.route('/toggle_paid/<int:id>', methods=['POST'])
 @login_required
 @role_required(['admin', 'manager', 'facture_admin'])
 def toggle_paid(id):
     """Toggle payment status via AJAX"""
-    from flask import jsonify
     document = Document.query.get_or_404(id)
     if document.type != 'facture':
         return jsonify({'success': False, 'error': 'Document invalide'}), 400
+    
+    # Check if invoice has an avoir
+    if document.generated_documents:
+        return jsonify({'success': False, 'error': 'Impossible de modifier le statut : cette facture est liée à un avoir.'}), 400
     
     # Toggle the paid status
     document.paid = not document.paid
@@ -196,7 +198,6 @@ def choose_devis():
     q = request.args.get('q')
     if q:
         search = f"%{q}%"
-        # Même logique de recherche que pour l'index devis
         devis_list = Document.query.join(Client).filter(
             (Document.type == 'devis') &
             ((Document.numero.ilike(search)) |
@@ -208,7 +209,7 @@ def choose_devis():
         
     return render_template('factures/choose_devis.html', documents=devis_list)
 
-@bp.route('/convert/<int:id>')
+@bp.route('/convert/<int:id>', methods=['POST'])
 @login_required
 @role_required(['admin', 'manager', 'facture_admin'])
 def convert_from_devis(id):
@@ -221,6 +222,12 @@ def convert_from_devis(id):
     existing_facture = Document.query.filter_by(type='facture', source_document_id=id).first()
     if existing_facture:
         flash(f'Ce devis a déjà été converti en facture (N° {existing_facture.numero}).', 'warning')
+        return redirect(url_for('devis.index'))
+    
+    # Get client reference from modal form
+    client_reference = request.form.get('client_reference')
+    if not client_reference:
+        flash('La référence client est obligatoire pour générer une facture.', 'danger')
         return redirect(url_for('devis.index'))
          
     year = datetime.now().year
@@ -237,7 +244,7 @@ def convert_from_devis(id):
         tva=devis.tva,
         montant_ttc=devis.montant_ttc,
         source_document_id=devis.id,
-        client_reference=devis.client_reference,
+        client_reference=client_reference,
         chantier_reference=devis.chantier_reference,
         created_by_id=current_user.id,
         updated_by_id=current_user.id

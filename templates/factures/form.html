@@ -1,6 +1,9 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<!-- Détection Mode Modification Avoir -->
+{% set is_avoir_edit = ('Avoir' in title and 'Modifier' in title) %}
+
 <div class="row justify-content-center">
     <div class="col-lg-10">
         <div class="card shadow-sm">
@@ -14,22 +17,37 @@
                     <div class="row mb-4">
                         <div class="col-md-5">
                             {{ form.client_id.label(class="form-label") }}
+                            {% if is_avoir_edit %}
+                            {{ form.client_id(class="form-select", disabled=True) }}
+                            <!-- Important: pour passer la validation si disabled -->
+                            <input type="hidden" name="client_id" value="{{ form.client_id.data }}">
+                            {% else %}
                             {{ form.client_id(class="form-select") }}
+                            {% endif %}
                         </div>
                         <div class="col-md-3">
                             {{ form.date.label(class="form-label") }}
-                            {{ form.date(class="form-control", type="date") }}
+                            {{ form.date(class="form-control", type="date") }} <!-- Date reste modifiable -->
                         </div>
                         <div class="col-md-4 d-flex align-items-end">
                             <div class="d-flex flex-column gap-2 w-100">
                                 <div class="form-check form-switch">
+                                    {% if is_avoir_edit %}
+                                    {{ form.autoliquidation(class="form-check-input", id="autoliquidation",
+                                    disabled=True) }}
+                                    {% else %}
                                     {{ form.autoliquidation(class="form-check-input", id="autoliquidation",
                                     onchange="calculateTotals()") }}
+                                    {% endif %}
                                     {{ form.autoliquidation.label(class="form-check-label fw-bold text-info") }}
                                 </div>
                                 {% if 'Facture' in title or 'Avoir' in title %}
                                 <div class="form-check form-switch">
+                                    {% if is_avoir_edit %}
+                                    {{ form.paid(class="form-check-input", disabled=True) }}
+                                    {% else %}
                                     {{ form.paid(class="form-check-input") }}
+                                    {% endif %}
                                     {{ form.paid.label(class="form-check-label fw-bold text-success") }}
                                 </div>
                                 {% endif %}
@@ -40,9 +58,25 @@
         </div>
 
         <div class="row mb-4">
+            <!-- LOGIQUE CONDITIONNELLE : AVOIR (Modif) vs FACTURE -->
+            {% if is_avoir_edit %}
+            <!-- CAS AVOIR MODIFICATION : READ ONLY + GRISÉ -->
             <div class="col-md-6">
-                {{ form.client_reference.label(class="form-label") }}
-                {{ form.client_reference(class="form-control", placeholder="Optionnel (ex: BC-12345)") }}
+                <label class="form-label">Référence Client</label>
+                {{ form.client_reference(class="form-control bg-light", readonly="readonly") }}
+                <div class="form-text">Non modifiable sur un avoir existant.</div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Référence Chantier</label>
+                {{ form.chantier_reference(class="form-control bg-light", readonly="readonly") }}
+                <div class="form-text">Non modifiable sur un avoir existant.</div>
+            </div>
+            {% else %}
+            <!-- CAS FACTURE (ou Nouvel Avoir) : EDITABLE + OBLIGATOIRE POUR REF CLIENT -->
+            <div class="col-md-6">
+                <label class="form-label" for="client_reference">Référence Client <span
+                        class="text-danger">*</span></label>
+                {{ form.client_reference(class="form-control", placeholder="Obligatoire (ex: BC-12345)") }}
                 <div class="form-text">Référence interne du client (30 caractères max).</div>
             </div>
             <div class="col-md-6">
@@ -50,6 +84,7 @@
                 {{ form.chantier_reference(class="form-control", placeholder="Optionnel (ex: Chantier Dupont)") }}
                 <div class="form-text">Référence du chantier (50 caractères max).</div>
             </div>
+            {% endif %}
         </div>
 
         <h5 class="mb-3">Lignes du document</h5>
@@ -58,15 +93,27 @@
             <div class="ligne-item row mb-2 align-items-end">
                 <div class="col-md-5">
                     {{ ligne.designation.label(class="form-label small") }}
+                    {% if is_avoir_edit %}
+                    {{ ligne.designation(class="form-control bg-light", readonly="readonly") }}
+                    {% else %}
                     {{ ligne.designation(class="form-control") }}
+                    {% endif %}
                 </div>
                 <div class="col-md-2">
                     {{ ligne.quantite.label(class="form-label small") }}
+                    {% if is_avoir_edit %}
+                    {{ ligne.quantite(class="form-control text-end calc-input bg-light", readonly="readonly") }}
+                    {% else %}
                     {{ ligne.quantite(class="form-control text-end calc-input") }}
+                    {% endif %}
                 </div>
                 <div class="col-md-3">
                     {{ ligne.prix_unitaire.label(class="form-label small") }}
+                    {% if is_avoir_edit %}
+                    {{ ligne.prix_unitaire(class="form-control text-end calc-input bg-light", readonly="readonly") }}
+                    {% else %}
                     {{ ligne.prix_unitaire(class="form-control text-end calc-input") }}
+                    {% endif %}
                 </div>
                 <div class="col-md-2">
                     <label class="form-label small">Total Ligne</label>
@@ -77,8 +124,10 @@
         </div>
 
         <div class="mt-3">
+            {% if not is_avoir_edit %}
             <button type="button" class="btn btn-sm btn-outline-primary" id="add-ligne-btn"><i class="fas fa-plus"></i>
                 Ajouter une ligne</button>
+            {% endif %}
         </div>
 
         <div class="row justify-content-end mt-4">
@@ -102,7 +151,7 @@
 
         <div class="d-grid gap-2 mt-4">
             {{ form.submit(class="btn btn-primary btn-lg") }}
-            <a href="{{ request.referrer or url_for('index') }}" class="btn btn-outline-secondary">Annuler</a>
+            <a href="{{ request.referrer or url_for('factures.index') }}" class="btn btn-outline-secondary">Annuler</a>
         </div>
         </form>
     </div>

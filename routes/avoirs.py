@@ -34,6 +34,10 @@ def add():
     form.client_id.choices = [(c.id, c.raison_sociale) for c in Client.query.order_by(Client.raison_sociale).all()]
 
     if form.validate_on_submit():
+        if not form.client_reference.data:
+            flash("La référence client est obligatoire pour un avoir.", "danger")
+            return render_template('factures/form.html', form=form, title="Nouvel Avoir")
+
         year = datetime.now().year
         count = Document.query.filter(Document.numero.like(f'A-{year}-%')).count()
         numero = f'A-{year}-{count + 1:04d}'
@@ -99,36 +103,22 @@ def edit(id):
         from services.pdf_generator import delete_old_pdf
         delete_old_pdf(document)
         
-        document.client_id = form.client_id.data
+        # RESTRICTION AVOIR : On ne modifie QUE la date
         document.date = datetime.strptime(form.date.data, '%Y-%m-%d')
-        document.autoliquidation = form.autoliquidation.data
-        document.client_reference = form.client_reference.data
-        document.chantier_reference = form.chantier_reference.data
+        
+        # Les autres champs sont ignorés/commentés
+        # document.client_id = form.client_id.data
+        # document.autoliquidation = form.autoliquidation.data
+        # document.client_reference = form.client_reference.data
+        # document.chantier_reference = form.chantier_reference.data
+        
         document.updated_by_id = current_user.id
         document.updated_at = datetime.utcnow()
         
-        document.lignes = []
-        
-        total_ht = 0
-        for ligne_form in form.lignes:
-            l = LigneDocument(
-                designation=ligne_form.designation.data,
-                quantite=ligne_form.quantite.data,
-                prix_unitaire=ligne_form.prix_unitaire.data,
-                total_ligne=ligne_form.quantite.data * ligne_form.prix_unitaire.data
-            )
-            total_ht += l.total_ligne
-            document.lignes.append(l)
-        
-        document.montant_ht = total_ht
-        if document.autoliquidation:
-            document.tva = 0
-        else:
-            document.tva = total_ht * 0.20
-        document.montant_ttc = document.montant_ht + document.tva
+        # Pas de mise à jour des lignes ni recalcule des montants
         
         db.session.commit()
-        flash(f'Avoir {document.numero} modifié avec succès.', 'success')
+        flash(f'Avoir {document.numero} modifié avec succès (Date uniquement).', 'success')
         return redirect(url_for('avoirs.index'))
 
     return render_template('factures/form.html', form=form, title=f"Modifier Avoir {document.numero}")
@@ -141,12 +131,14 @@ def choose_facture():
         search = f"%{q}%"
         facture_list = Document.query.join(Client).filter(
             (Document.type == 'facture') &
+            (Document.paid == False) & # FILTRE RESTRICTION
             ((Document.numero.ilike(search)) |
             (Client.raison_sociale.ilike(search)) |
             (db.cast(Document.date, db.String).ilike(search)))
         ).order_by(Document.date.desc()).all()
     else:
-        facture_list = Document.query.filter_by(type='facture').order_by(Document.date.desc()).all()
+        # FILTRE RESTRICTION
+        facture_list = Document.query.filter_by(type='facture', paid=False).order_by(Document.date.desc()).all()
         
     return render_template('avoirs/choose_facture.html', documents=facture_list)
 
@@ -157,6 +149,11 @@ def convert_from_facture(id):
     facture = Document.query.get_or_404(id)
     if facture.type != 'facture':
          flash('Document non valide pour conversion.', 'danger')
+         return redirect(url_for('factures.index'))
+    
+    # SECURITE ANTI-FRAUDE : Pas d'avoir sur une facture payée
+    if facture.paid:
+         flash("Impossible de créer un avoir sur une facture réglée.", "danger")
          return redirect(url_for('factures.index'))
          
     year = datetime.now().year
