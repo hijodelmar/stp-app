@@ -50,14 +50,28 @@ def send_document(id):
         # 1. Générer le PDF en mémoire
         pdf_bytes = generate_pdf_bytes(doc)
         
-        # 2. Préparer l'email
+        # 2. Préparer l'email (Format HTML avec Signature)
         doc_type_display = "Bon de Commande" if doc.type == 'bon_de_commande' else doc.type.title()
         subject = f"{doc_type_display} n°{doc.numero} - {info.nom}"
-        body = f"Bonjour,\n\nVeuillez trouver ci-joint votre {doc_type_display.lower()} n°{doc.numero}.\n\nCordialement,\n\n{info.nom}\n{info.telephone or ''}"
+        
+        # Version HTML du message
+        base_message = f"Bonjour,<br><br>Veuillez trouver ci-joint votre {doc_type_display.lower()} n°{doc.numero}.<br><br>"
+        signature = info.email_signature if info.email_signature else f"Cordialement,<br><br>{info.nom}<br>{info.telephone or ''}"
+        
+        body_html = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; color: #333;">
+                {base_message}
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+                {signature}
+            </body>
+        </html>
+        """
+        
         filename = f"{doc.type}_{doc.numero}.pdf"
         
         # 3. Envoyer
-        send_email_with_attachment(recipient_email, subject, body, pdf_bytes, filename)
+        send_email_with_attachment(recipient_email, subject, body_html, pdf_bytes, filename)
         
         # 4. Enregistrer la date d'envoi
         from datetime import datetime

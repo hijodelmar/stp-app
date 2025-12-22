@@ -38,7 +38,8 @@ with app.app_context():
         ("smtp_password", "VARCHAR(100)"),
         ("smtp_use_tls", "BOOLEAN DEFAULT 1"),
         ("smtp_use_ssl", "BOOLEAN DEFAULT 0"),
-        ("mail_default_sender", "VARCHAR(100)")
+        ("mail_default_sender", "VARCHAR(100)"),
+        ("email_signature", "TEXT")
     ]
     for col_name, col_type in company_columns:
         try:

@@ -18,8 +18,8 @@ def send_email_with_attachment(to_email, subject, body, attachment_content, atta
     msg['To'] = to_email
     msg['Subject'] = subject
 
-    # Corps de l'email
-    msg.attach(MIMEText(body, 'plain'))
+    # Corps de l'email (HTML support)
+    msg.attach(MIMEText(body, 'html'))
 
     # Pièce jointe (PDF)
     part = MIMEApplication(attachment_content, _subtype="pdf")

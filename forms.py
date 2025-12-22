@@ -87,5 +87,6 @@ class CompanyInfoForm(FlaskForm):
     smtp_use_tls = BooleanField('Utiliser TLS (STARTTLS)', default=True)
     smtp_use_ssl = BooleanField('Utiliser SSL', default=False)
     mail_default_sender = StringField('Nom de l\'expéditeur (ex: STP Gestion)')
+    email_signature = TextAreaField('Signature Email (HTML)')
     
     submit = SubmitField('Enregistrer')

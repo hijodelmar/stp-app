@@ -178,6 +178,7 @@ class CompanyInfo(db.Model):
     smtp_use_tls = db.Column(db.Boolean, default=True)
     smtp_use_ssl = db.Column(db.Boolean, default=False)
     mail_default_sender = db.Column(db.String(100), nullable=True)
+    email_signature = db.Column(db.Text, nullable=True)
 
     def __repr__(self):
         return f'<CompanyInfo {self.nom}>'
