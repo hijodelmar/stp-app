@@ -26,9 +26,9 @@ with app.app_context():
             cursor.execute(f"ALTER TABLE user ADD COLUMN {col_name} {col_type}")
             print(f"Column '{col_name}' added to user table.")
         except sqlite3.OperationalError:
-            print(f"Column '{col_name}' already exists in user table.")
+            pass
 
-    # 3. Update CompanyInfo table (FIX for tva_default and SMTP)
+    # 3. Update CompanyInfo table
     print("Checking CompanyInfo table columns...")
     company_columns = [
         ("tva_default", "FLOAT DEFAULT 20.0"),
@@ -45,12 +45,20 @@ with app.app_context():
             cursor.execute(f"ALTER TABLE company_info ADD COLUMN {col_name} {col_type}")
             print(f"Column '{col_name}' added to company_info table.")
         except sqlite3.OperationalError:
-            print(f"Column '{col_name}' already exists in company_info table.")
+            pass
+
+    # 4. Update LigneDocument table (FIX for category)
+    print("Checking LigneDocument table columns...")
+    try:
+        cursor.execute("ALTER TABLE ligne_document ADD COLUMN category VARCHAR(20) DEFAULT 'fourniture'")
+        print("Column 'category' added to ligne_document table.")
+    except sqlite3.OperationalError:
+        print("Column 'category' already exists in ligne_document.")
     
     conn.commit()
     conn.close()
 
-    # 4. Create default roles
+    # 5. Create default roles
     default_roles = [
         ('admin', 'Administrateur complet'),
         ('manager', 'Gestionnaire (Docs/Clients, pas de Paramètres/Users)'),
@@ -74,7 +82,7 @@ with app.app_context():
     
     db.session.commit()
 
-    # 5. Migrate existing users' roles
+    # 6. Migrate existing users' roles
     users = User.query.all()
     for user in users:
         if not user.roles:
@@ -93,7 +101,7 @@ with app.app_context():
     
     db.session.commit()
 
-# 6. Fix Document table schema
+# 7. Fix Document table schema
 print("Checking Document table schema...")
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
