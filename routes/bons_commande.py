@@ -11,7 +11,7 @@ bp = Blueprint('bons_commande', __name__)
 
 @bp.route('/')
 @login_required
-@role_required(['admin', 'manager', 'reporting', 'facture_admin'])
+@role_required(['admin', 'manager', 'reporting', 'facture_admin', 'supplier_admin'])
 def index():
     q = request.args.get('q')
     if q:
@@ -28,7 +28,7 @@ def index():
 
 @bp.route('/add', methods=['GET', 'POST'])
 @login_required
-@role_required(['admin', 'manager', 'facture_admin'])
+@role_required(['admin', 'manager', 'facture_admin', 'supplier_admin'])
 def add():
     form = BonCommandeForm()
     form.supplier_id.choices = [(s.id, s.raison_sociale) for s in Supplier.query.order_by(Supplier.raison_sociale).all()]
@@ -87,7 +87,7 @@ def add():
 
 @bp.route('/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
-@role_required(['admin', 'manager', 'facture_admin'])
+@role_required(['admin', 'manager', 'facture_admin', 'supplier_admin'])
 def edit(id):
     document = Document.query.get_or_404(id)
     if document.type != 'bon_de_commande':
@@ -140,7 +140,7 @@ def edit(id):
 
 @bp.route('/delete/<int:id>', methods=['POST'])
 @login_required
-@role_required(['admin'])
+@role_required(['admin', 'supplier_admin'])
 def delete(id):
     document = Document.query.get_or_404(id)
     if document.type != 'bon_de_commande':
