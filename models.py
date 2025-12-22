@@ -74,22 +74,52 @@ class Client(db.Model):
     def __repr__(self):
         return f'<Client {self.raison_sociale}>'
 
+class Supplier(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    raison_sociale = db.Column(db.String(100), nullable=False)
+    adresse = db.Column(db.String(200))
+    code_postal = db.Column(db.String(10))
+    ville = db.Column(db.String(100))
+    telephone = db.Column(db.String(20))
+    email = db.Column(db.String(120))
+    siret = db.Column(db.String(50))
+    tva_intra = db.Column(db.String(50))
+    date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Audit trail
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    updated_by_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    
+    created_by = db.relationship('User', foreign_keys=[created_by_id])
+    updated_by = db.relationship('User', foreign_keys=[updated_by_id])
+    
+    # Relation avec les documents
+    documents = db.relationship('Document', backref='supplier', lazy=True)
+
+    def __repr__(self):
+        return f'<Supplier {self.raison_sociale}>'
+
 class Document(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    type = db.Column(db.String(20), nullable=False) # 'devis', 'facture', 'avoir'
+    type = db.Column(db.String(20), nullable=False) # 'devis', 'facture', 'avoir', 'bon_de_commande'
     numero = db.Column(db.String(50), unique=True, nullable=False)
     date = db.Column(db.DateTime, default=datetime.utcnow)
     
-    client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
+    client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=True)
+    supplier_id = db.Column(db.Integer, db.ForeignKey('supplier.id'), nullable=True)
     
     montant_ht = db.Column(db.Float, default=0.0)
     tva = db.Column(db.Float, default=0.0)
     montant_ttc = db.Column(db.Float, default=0.0)
     
     autoliquidation = db.Column(db.Boolean, default=False)
+    tva_rate = db.Column(db.Float, default=20.0) # Taux de TVA appliqué (en %)
     paid = db.Column(db.Boolean, default=False)  # Payment status for invoices
-    client_reference = db.Column(db.String(30))  # Référence client (max 30 chars)
-    chantier_reference = db.Column(db.String(50)) # Référence du chantier (max 50 chars)
+    client_reference = db.Column(db.String(50)) # Référence client (optionnel)
+    chantier_reference = db.Column(db.String(100)) # Référence chantier (optionnel)
+    validity_duration = db.Column(db.Integer, default=1) # Durée de validité en mois (pour devis)
     pdf_path = db.Column(db.String(200)) # Chemin vers le fichier PDF archivé
     sent_at = db.Column(db.DateTime, nullable=True) # Date du dernier envoi par email
     
@@ -120,6 +150,7 @@ class LigneDocument(db.Model):
     quantite = db.Column(db.Float, default=1.0)
     prix_unitaire = db.Column(db.Float, default=0.0)
     total_ligne = db.Column(db.Float, default=0.0)
+    category = db.Column(db.String(20), default='fourniture') # 'prestation', 'main_doeuvre', 'fourniture'
 
     def __repr__(self):
         return f'<Ligne {self.designation}>'
@@ -136,7 +167,8 @@ class CompanyInfo(db.Model):
     conditions_reglement = db.Column(db.String(200), nullable=True)
     iban = db.Column(db.String(50), nullable=True)
     footer_info = db.Column(db.Text, nullable=True)
-    logo_path = db.Column(db.String(200), nullable=True) 
+    logo_path = db.Column(db.String(200), nullable=True)
+    tva_default = db.Column(db.Float, default=20.0) # Taux de TVA par défaut 
 
     # Configuration Email (SMTP)
     smtp_server = db.Column(db.String(100), nullable=True)

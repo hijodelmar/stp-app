@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">{{ title }}</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h5>Devis à convertir :</h5>
+                        <p><strong>Numéro :</strong> {{ devis.numero }}</p>
+                        <p><strong>Client :</strong> {{ devis.client.nom if devis.client else 'N/A' }}</p>
+                        <p><strong>Date :</strong> {{ devis.date.strftime('%d/%m/%Y') }}</p>
+                        <p><strong>Montant TTC :</strong> {{ "%.2f"|format(devis.montant_ttc) }} €</p>
+                    </div>
+
+                    <form method="POST" action="{{ url_for('factures.convert_from_devis', id=devis.id) }}">
+                        {{ form.hidden_tag() }}
+
+                        <div class="mb-3">
+                            <label for="client_reference" class="form-label">
+                                Référence Client <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="client_reference" name="client_reference"
+                                placeholder="Ex: PO-2024-001" required>
+                            <div class="form-text">
+                                Cette référence sera utilisée pour identifier la facture chez le client.
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('factures.choose_devis') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Annuler
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Convertir en Facture
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

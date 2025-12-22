@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Liste des Fournisseurs</h1>
+    {% if current_user.has_any_role(['admin', 'manager', 'facture_admin']) %}
+    <a href="{{ url_for('fournisseurs.add') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Nouveau
+        Fournisseur</a>
+    {% endif %}
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form action="{{ url_for('fournisseurs.index') }}" method="GET" class="d-flex">
+            <input class="form-control me-2" type="search" name="q" placeholder="Rechercher (Nom, Ville, Email)"
+                aria-label="Search" value="{{ request.args.get('q', '') }}">
+            <button class="btn btn-outline-primary" type="submit">Rechercher</button>
+            {% if request.args.get('q') %}
+            <a href="{{ url_for('fournisseurs.index') }}" class="btn btn-outline-secondary ms-2" title="Effacer"><i
+                    class="fas fa-times"></i></a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if suppliers %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Raison Sociale</th>
+                        <th>Ville</th>
+                        <th>Contact</th>
+                        <th>Historique</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for supplier in suppliers %}
+                    <tr>
+                        <td>{{ supplier.raison_sociale }}</td>
+                        <td>{{ supplier.ville }}</td>
+                        <td>
+                            <small class="d-block">{{ supplier.telephone or '-' }}</small>
+                            <small class="text-muted">{{ supplier.email or '-' }}</small>
+                        </td>
+                        <td>
+                            <small class="d-block">Créé par: {{ supplier.created_by.username if supplier.created_by else
+                                'Système' }} ({{ supplier.created_at.strftime('%d/%m/%y %H:%M') }})</small>
+                            <small class="text-muted">Modif: {{ supplier.updated_by.username if supplier.updated_by else
+                                'Système' }} ({{ supplier.updated_at.strftime('%d/%m/%y %H:%M') }})</small>
+                        </td>
+                        <td>
+                            {% if current_user.has_any_role(['admin', 'manager', 'facture_admin']) %}
+                            <a href="{{ url_for('fournisseurs.edit', id=supplier.id) }}"
+                                class="btn btn-sm btn-outline-secondary me-1"><i class="fas fa-edit"></i></a>
+                            <form action="{{ url_for('fournisseurs.delete', id=supplier.id) }}" method="POST"
+                                class="d-inline"
+                                onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce fournisseur ?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger"><i
+                                        class="fas fa-trash"></i></button>
+                            </form>
+                            {% else %}
+                            <span class="badge bg-light text-dark">Lecture seule</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center py-4">Aucun fournisseur enregistré.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Liste des Bons de Commande</h1>
+    {% if current_user.has_any_role(['admin', 'manager', 'facture_admin']) %}
+    <a href="{{ url_for('bons_commande.add') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Nouveau Bon de
+        Commande</a>
+    {% endif %}
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form action="{{ url_for('bons_commande.index') }}" method="GET" class="d-flex">
+            <input class="form-control me-2" type="search" name="q" placeholder="Rechercher (Numéro, Fournisseur)"
+                aria-label="Search" value="{{ request.args.get('q', '') }}">
+            <button class="btn btn-outline-primary" type="submit">Rechercher</button>
+            {% if request.args.get('q') %}
+            <a href="{{ url_for('bons_commande.index') }}" class="btn btn-outline-secondary ms-2" title="Effacer"><i
+                    class="fas fa-times"></i></a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if documents %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Numéro</th>
+                        <th>Date</th>
+                        <th>Fournisseur</th>
+                        <th>Chantier</th>
+                        <th>Historique</th>
+                        <th>Montants</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for doc in documents %}
+                    <tr>
+                        <td>
+                            <strong class="text-info">{{ doc.numero }}</strong>
+                            {% if doc.sent_at %}
+                            <i class="fas fa-envelope-circle-check text-success ms-1"
+                                title="Envoyé par email le {{ doc.sent_at.strftime('%d/%m/%Y à %H:%M') }}"></i>
+                            {% endif %}
+                        </td>
+                        <td>{{ doc.date.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ doc.supplier.raison_sociale }}</td>
+                        <td>{{ doc.chantier_reference or '-' }}</td>
+                        <td>
+                            <small class="d-block">Créé par: {{ doc.created_by.username if doc.created_by else 'Système'
+                                }} ({{ doc.created_at.strftime('%d/%m/%y %H:%M') }})</small>
+                            <small class="text-muted">Modif: {{ doc.updated_by.username if doc.updated_by else
+                                'Système' }} ({{ doc.updated_at.strftime('%d/%m/%y %H:%M') }})</small>
+                        </td>
+                        <td>
+                            <small class="d-block text-muted">HT: {{ "%.2f"|format(doc.montant_ht) }} €</small>
+                            <div class="fw-bold">TTC: {{ "%.2f"|format(doc.montant_ttc) }} €</div>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('documents.view_pdf', id=doc.id) }}"
+                                class="btn btn-sm btn-outline-info me-1" target="_blank"><i class="fas fa-file-pdf"></i>
+                                PDF</a>
+
+                            {% if doc.supplier.email and current_user.has_any_role(['admin', 'manager',
+                            'facture_admin']) %}
+                            <form action="{{ url_for('mail.send_document', id=doc.id) }}" method="POST" class="d-inline"
+                                onsubmit="return confirm('Envoyer ce bon de commande par email à {{ doc.supplier.email }} ?');">
+                                <button type="submit" class="btn btn-sm btn-outline-dark me-1"
+                                    title="Envoyer par email">
+                                    <i class="fas fa-envelope"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+
+                            {% if current_user.has_any_role(['admin', 'manager', 'facture_admin']) %}
+                            <a href="{{ url_for('bons_commande.edit', id=doc.id) }}"
+                                class="btn btn-sm btn-outline-primary me-1" title="Modifier"><i
+                                    class="fas fa-edit"></i></a>
+                            <form action="{{ url_for('bons_commande.delete', id=doc.id) }}" method="POST"
+                                class="d-inline" onsubmit="return confirm('Supprimer ce bon de commande ?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer"><i
+                                        class="fas fa-trash"></i></button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center py-4">Aucun bon de commande enregistré.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

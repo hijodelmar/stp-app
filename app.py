@@ -46,6 +46,12 @@ def create_app(config_class=Config):
     from routes.avoirs import bp as avoirs_bp
     app.register_blueprint(avoirs_bp, url_prefix='/avoirs')
 
+    from routes.fournisseurs import bp as fournisseurs_bp
+    app.register_blueprint(fournisseurs_bp, url_prefix='/fournisseurs')
+
+    from routes.bons_commande import bp as bons_commande_bp
+    app.register_blueprint(bons_commande_bp, url_prefix='/bons-commande')
+
     from routes.documents import bp as documents_bp
     app.register_blueprint(documents_bp, url_prefix='/documents')
     

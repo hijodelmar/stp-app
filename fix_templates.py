@@ -1,0 +1,493 @@
+
+import os
+
+# Construction safe du tag Jinja pour eviter corruption
+jinja_length_tag = "{{ form.lignes" + "|" + "length }}"
+
+devis_content = r"""{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h3 class="mb-0">{{ title }}</h3>
+                <a href="{{ url_for('devis.index') }}" class="btn btn-outline-light btn-sm">Retour</a>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">Informations Client & Chantier</div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.client_id.label(class="form-label") }}
+                                    {{ form.client_id(class="form-select") }}
+                                    {% for error in form.client_id.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ form.date.label(class="form-label") }}
+                                    {{ form.date(class="form-control", type="date") }}
+                                    {% for error in form.date.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <!-- Références -->
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    {{ form.chantier_reference.label(class="form-label") }}
+                                    {{ form.chantier_reference(class="form-control") }}
+                                    {% for error in form.chantier_reference.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="form-check form-switch">
+                                {{ form.autoliquidation(class="form-check-input") }}
+                                {{ form.autoliquidation.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <span>Lignes du devis</span>
+                            <button type="button" class="btn btn-sm btn-success" id="add-line">
+                                <i class="fas fa-plus"></i> Ajouter une ligne
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div id="lignes-container">
+                                {% for ligne in form.lignes %}
+                                <div class="row mb-2 align-items-end ligne-item">
+                                    <div class="col-md-2">
+                                        {{ ligne.category.label(class="form-label small") }}
+                                        {{ ligne.category(class="form-select form-select-sm category-select") }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        {{ ligne.designation.label(class="form-label small") }}
+                                        {{ ligne.designation(class="form-control form-control-sm") }}
+                                    </div>
+                                    <div class="col-md-2 full-fields">
+                                        {{ ligne.quantite.label(class="form-label small") }}
+                                        {{ ligne.quantite(class="form-control form-control-sm text-end") }}
+                                    </div>
+                                    <div class="col-md-2 full-fields">
+                                        {{ ligne.prix_unitaire.label(class="form-label small") }}
+                                        {{ ligne.prix_unitaire(class="form-control form-control-sm text-end") }}
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button type="button" class="btn btn-sm btn-outline-danger w-100 remove-line" tabindex="-1">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save me-2"></i> Enregistrer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="ligne-template" class="d-none">
+    <div class="row mb-2 align-items-end ligne-item">
+        <div class="col-md-2">
+            <label class="form-label small">Type</label>
+            <select class="form-select form-select-sm category-select" name="lignes-__index__-category">
+                <option value="fourniture" selected>Fourniture</option>
+                <option value="prestation">Prestation</option>
+                <option value="main_doeuvre">Main d'oeuvre</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label small">Désignation</label>
+            <input type="text" class="form-control form-control-sm" name="lignes-__index__-designation">
+        </div>
+        <div class="col-md-2 full-fields">
+            <label class="form-label small">Quantité</label>
+            <input type="number" step="0.01" class="form-control form-control-sm text-end" name="lignes-__index__-quantite" value="1.0">
+        </div>
+        <div class="col-md-2 full-fields">
+            <label class="form-label small">Prix Unitaire</label>
+            <input type="number" step="0.01" class="form-control form-control-sm text-end" name="lignes-__index__-prix_unitaire" value="0.0">
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-sm btn-outline-danger w-100 remove-line" tabindex="-1">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("DOM Loaded - Devis Form Script Init");
+        function updateLineVisibility(row) {
+            const select = row.querySelector('.category-select');
+            const qteInput = row.querySelector('input[name*="quantite"]');
+            const prixInput = row.querySelector('input[name*="prix_unitaire"]');
+            
+            if(!select || !qteInput || !prixInput) return;
+
+            const qteWrapper = qteInput.parentElement;
+            const prixWrapper = prixInput.parentElement;
+            const prixLabel = prixWrapper.querySelector('label');
+            
+            const category = select.value;
+            
+            if (category === 'prestation') {
+                qteWrapper.style.visibility = 'hidden';
+                prixWrapper.style.visibility = 'hidden';
+                qteInput.value = 0;
+                prixInput.value = 0;
+            } else if (category === 'main_doeuvre') {
+                qteWrapper.style.visibility = 'hidden';
+                qteInput.value = 1; 
+                prixWrapper.style.visibility = 'visible';
+                if(prixLabel) prixLabel.textContent = "Montant Total";
+            } else {
+                qteWrapper.style.visibility = 'visible';
+                prixWrapper.style.visibility = 'visible';
+                if(prixLabel) prixLabel.textContent = "Prix Unitaire";
+            }
+        }
+
+        const container = document.getElementById('lignes-container');
+        if(container){
+            container.addEventListener('change', function(e) {
+                if (e.target.classList.contains('category-select')) {
+                    updateLineVisibility(e.target.closest('.ligne-item'));
+                }
+            });
+            
+            document.querySelectorAll('.ligne-item').forEach(updateLineVisibility);
+
+            const addButton = document.getElementById('add-line');
+            if (addButton) {
+                // SCRIPT GENERATED
+                let lineIndex = """ + jinja_length_tag + r""";
+                const template = document.getElementById('ligne-template').innerHTML;
+                
+                addButton.addEventListener('click', function() {
+                    const newHtml = template.replace(/__index__/g, lineIndex);
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = newHtml;
+                    const newRow = tempDiv.firstElementChild;
+                    container.appendChild(newRow);
+                    updateLineVisibility(newRow);
+                    lineIndex++;
+                });
+            }
+            
+            container.addEventListener('click', function(e) {
+                if (e.target.closest('.remove-line')) {
+                    const row = e.target.closest('.ligne-item');
+                    if (document.querySelectorAll('.ligne-item').length > 1) {
+                        row.remove();
+                    } else {
+                        alert('Le document doit contenir au moins une ligne.');
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
+"""
+
+facture_content = r"""{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h3 class="mb-0">{{ title }}</h3>
+                <a href="{{ url_for('factures.index') }}" class="btn btn-outline-light btn-sm">Retour</a>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">Informations Client</div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.client_id.label(class="form-label") }}
+                                    {% if title.startswith('Modifier Avoir') %}
+                                        <input type="text" class="form-control" value="{{ form.client_id.choices|selectattr('0', 'equalto', form.client_id.data)|map(attribute='1')|first }}" disabled>
+                                        <input type="hidden" name="client_id" value="{{ form.client_id.data }}">
+                                    {% else %}
+                                        {{ form.client_id(class="form-select") }}
+                                    {% endif %}
+                                    {% for error in form.client_id.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ form.date.label(class="form-label") }}
+                                    {{ form.date(class="form-control", type="date") }}
+                                    {% for error in form.date.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.client_reference.label(class="form-label") }} 
+                                    {% if not title.startswith('Modifier Avoir') %}<span class="text-danger">*</span>{% endif %}
+                                    {% if title.startswith('Modifier Avoir') %}
+                                        {{ form.client_reference(class="form-control", readonly=True) }}
+                                    {% else %}
+                                        {{ form.client_reference(class="form-control", placeholder="Référence obligatoire") }}
+                                    {% endif %}
+                                    {% for error in form.client_reference.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ form.chantier_reference.label(class="form-label") }}
+                                    {% if title.startswith('Modifier Avoir') %}
+                                        {{ form.chantier_reference(class="form-control", readonly=True) }}
+                                    {% else %}
+                                        {{ form.chantier_reference(class="form-control") }}
+                                    {% endif %}
+                                    {% for error in form.chantier_reference.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        {% if title.startswith('Modifier Avoir') %}
+                                            {{ form.autoliquidation(class="form-check-input", disabled=True) }}
+                                        {% else %}
+                                            {{ form.autoliquidation(class="form-check-input") }}
+                                        {% endif %}
+                                        {{ form.autoliquidation.label(class="form-check-label") }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    {% if form.paid %}
+                                    <div class="form-check form-switch">
+                                        {% if title.startswith('Modifier Avoir') %}
+                                            {{ form.paid(class="form-check-input", disabled=True) }}
+                                        {% else %}
+                                            {{ form.paid(class="form-check-input") }}
+                                        {% endif %}
+                                        {{ form.paid.label(class="form-check-label") }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <span>Lignes du document</span>
+                            {% if not title.startswith('Modifier Avoir') %}
+                            <button type="button" class="btn btn-sm btn-success" id="add-line">
+                                <i class="fas fa-plus"></i> Ajouter une ligne
+                            </button>
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            <div id="lignes-container">
+                                {% for ligne in form.lignes %}
+                                <div class="row mb-2 align-items-end ligne-item">
+                                    <div class="col-md-2">
+                                        {{ ligne.category.label(class="form-label small") }}
+                                        {% if title.startswith('Modifier Avoir') %}
+                                            {{ ligne.category(class="form-select form-select-sm category-select", disabled=True) }}
+                                        {% else %}
+                                            {{ ligne.category(class="form-select form-select-sm category-select") }}
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4">
+                                        {{ ligne.designation.label(class="form-label small") }}
+                                        {% if title.startswith('Modifier Avoir') %}
+                                            {{ ligne.designation(class="form-control form-control-sm", readonly=True) }}
+                                        {% else %}
+                                            {{ ligne.designation(class="form-control form-control-sm") }}
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-2 full-fields">
+                                        {{ ligne.quantite.label(class="form-label small") }}
+                                        {% if title.startswith('Modifier Avoir') %}
+                                            {{ ligne.quantite(class="form-control form-control-sm text-end", readonly=True) }}
+                                        {% else %}
+                                            {{ ligne.quantite(class="form-control form-control-sm text-end") }}
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-2 full-fields">
+                                        {{ ligne.prix_unitaire.label(class="form-label small") }}
+                                        {% if title.startswith('Modifier Avoir') %}
+                                            {{ ligne.prix_unitaire(class="form-control form-control-sm text-end", readonly=True) }}
+                                        {% else %}
+                                            {{ ligne.prix_unitaire(class="form-control form-control-sm text-end") }}
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-2">
+                                        {% if not title.startswith('Modifier Avoir') %}
+                                        <button type="button" class="btn btn-sm btn-outline-danger w-100 remove-line" tabindex="-1">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save me-2"></i> Enregistrer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="ligne-template" class="d-none">
+    <div class="row mb-2 align-items-end ligne-item">
+        <div class="col-md-2">
+            <label class="form-label small">Type</label>
+            <select class="form-select form-select-sm category-select" name="lignes-__index__-category">
+                <option value="fourniture" selected>Fourniture</option>
+                <option value="prestation">Prestation</option>
+                <option value="main_doeuvre">Main d'oeuvre</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label small">Désignation</label>
+            <input type="text" class="form-control form-control-sm" name="lignes-__index__-designation">
+        </div>
+        <div class="col-md-2 full-fields">
+            <label class="form-label small">Quantité</label>
+            <input type="number" step="0.01" class="form-control form-control-sm text-end" name="lignes-__index__-quantite" value="1.0">
+        </div>
+        <div class="col-md-2 full-fields">
+            <label class="form-label small">Prix Unitaire</label>
+            <input type="number" step="0.01" class="form-control form-control-sm text-end" name="lignes-__index__-prix_unitaire" value="0.0">
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-sm btn-outline-danger w-100 remove-line" tabindex="-1">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("DOM Loaded - Facture Form Script Init");
+        function updateLineVisibility(row) {
+            const select = row.querySelector('.category-select');
+            const qteInput = row.querySelector('input[name*="quantite"]');
+            const prixInput = row.querySelector('input[name*="prix_unitaire"]');
+            
+            if(!select || !qteInput || !prixInput) return;
+
+            const qteWrapper = qteInput.parentElement;
+            const prixWrapper = prixInput.parentElement;
+            const prixLabel = prixWrapper.querySelector('label');
+            
+            const category = select.value;
+            
+            if (category === 'prestation') {
+                qteWrapper.style.visibility = 'hidden';
+                prixWrapper.style.visibility = 'hidden';
+                qteInput.value = 0;
+                prixInput.value = 0;
+            } else if (category === 'main_doeuvre') {
+                qteWrapper.style.visibility = 'hidden';
+                qteInput.value = 1; 
+                prixWrapper.style.visibility = 'visible';
+                if(prixLabel) prixLabel.textContent = "Montant Total";
+            } else {
+                qteWrapper.style.visibility = 'visible';
+                prixWrapper.style.visibility = 'visible';
+                if(prixLabel) prixLabel.textContent = "Prix Unitaire";
+            }
+        }
+
+        const container = document.getElementById('lignes-container');
+        if(container){
+            container.addEventListener('change', function(e) {
+                if (e.target.classList.contains('category-select')) {
+                    updateLineVisibility(e.target.closest('.ligne-item'));
+                }
+            });
+            
+            document.querySelectorAll('.ligne-item').forEach(updateLineVisibility);
+
+            const addButton = document.getElementById('add-line');
+            if (addButton) {
+                // SCRIPT GENERATED
+                let lineIndex = """ + jinja_length_tag + r""";
+                const template = document.getElementById('ligne-template').innerHTML;
+                
+                addButton.addEventListener('click', function() {
+                    const newHtml = template.replace(/__index__/g, lineIndex);
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = newHtml;
+                    const newRow = tempDiv.firstElementChild;
+                    container.appendChild(newRow);
+                    updateLineVisibility(newRow);
+                    lineIndex++;
+                });
+            }
+            
+            container.addEventListener('click', function(e) {
+                if (e.target.closest('.remove-line')) {
+                    const row = e.target.closest('.ligne-item');
+                    if (document.querySelectorAll('.ligne-item').length > 1) {
+                        row.remove();
+                    } else {
+                        alert('Le document doit contenir au moins une ligne.');
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
+"""
+
+with open(r'd:\websites\stp\templates\devis\form.html', 'w', encoding='utf-8') as f:
+    f.write(devis_content)
+
+with open(r'd:\websites\stp\templates\factures\form.html', 'w', encoding='utf-8') as f:
+    f.write(facture_content)
+
+print("Files generated successfully.")
