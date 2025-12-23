@@ -139,8 +139,36 @@ class Document(db.Model):
     # Relation avec les lignes
     lignes = db.relationship('LigneDocument', backref='document', lazy=True, cascade="all, delete-orphan")
 
+    # Relation avec le contact principal
+    contact_id = db.Column(db.Integer, db.ForeignKey('client_contact.id'), nullable=True)
+    contact = db.relationship('ClientContact', foreign_keys=[contact_id])
+
+    # Relation Many-to-Many pour les contacts en copie (CC)
+    cc_contacts = db.relationship('ClientContact', secondary='document_cc', lazy='subquery',
+        backref=db.backref('cc_in_documents', lazy=True))
+
     def __repr__(self):
         return f'<Document {self.numero}>'
+
+# Table d'association pour les CC
+document_cc = db.Table('document_cc',
+    db.Column('document_id', db.Integer, db.ForeignKey('document.id'), primary_key=True),
+    db.Column('contact_id', db.Integer, db.ForeignKey('client_contact.id'), primary_key=True)
+)
+
+class ClientContact(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
+    
+    nom = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), nullable=True)
+    telephone = db.Column(db.String(20), nullable=True)
+    fonction = db.Column(db.String(100), nullable=True)
+    
+    client = db.relationship('Client', backref=db.backref('contacts', lazy=True, cascade="all, delete-orphan"))
+
+    def __repr__(self):
+        return f'<Contact {self.nom}>'
 
 class LigneDocument(db.Model):
     id = db.Column(db.Integer, primary_key=True)

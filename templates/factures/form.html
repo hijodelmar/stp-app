@@ -38,148 +38,169 @@
                                     {% endfor %}
                                 </div>
                             </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    {{ form.client_reference.label(class="form-label") }}
-                                    {% if not title.startswith('Modifier Avoir') %}<span class="text-danger">*</span>{%
-                                    endif %}
-                                    {% if title.startswith('Modifier Avoir') %}
-                                    {{ form.client_reference(class="form-control", readonly=True) }}
-                                    {% else %}
-                                    {{ form.client_reference(class="form-control", placeholder="Référence obligatoire")
-                                    }}
-                                    {% endif %}
-                                    {% for error in form.client_reference.errors %}
-                                    <div class="text-danger">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    {{ form.chantier_reference.label(class="form-label") }}
-                                    {% if title.startswith('Modifier Avoir') %}
-                                    {{ form.chantier_reference(class="form-control", readonly=True) }}
-                                    {% else %}
-                                    {{ form.chantier_reference(class="form-control") }}
-                                    {% endif %}
-                                    {% for error in form.chantier_reference.errors %}
-                                    <div class="text-danger">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
+                        </div>
+                        <!-- References -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.client_reference.label(class="form-label") }}
+                                {% if not title.startswith('Modifier Avoir') %}<span class="text-danger">*</span>{%
+                                endif %}
+                                {% if title.startswith('Modifier Avoir') %}
+                                {{ form.client_reference(class="form-control", readonly=True) }}
+                                {% else %}
+                                {{ form.client_reference(class="form-control", placeholder="Référence obligatoire")
+                                }}
+                                {% endif %}
+                                {% for error in form.client_reference.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
                             </div>
-                        </div>
-                    </div>
-
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="form-check form-switch">
-                                        {% if title.startswith('Modifier Avoir') %}
-                                        {{ form.autoliquidation(class="form-check-input", disabled=True,
-                                        id="autoliquidation") }}
-                                        {% else %}
-                                        {{ form.autoliquidation(class="form-check-input", id="autoliquidation") }}
-                                        {% endif %}
-                                        {{ form.autoliquidation.label(class="form-check-label") }}
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    {% if form.paid %}
-                                    <div class="form-check form-switch">
-                                        {% if title.startswith('Modifier Avoir') %}
-                                        {{ form.paid(class="form-check-input", disabled=True) }}
-                                        {% else %}
-                                        {{ form.paid(class="form-check-input") }}
-                                        {% endif %}
-                                        {{ form.paid.label(class="form-check-label") }}
-                                    </div>
-                                    {% endif %}
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="input-group">
-                                        {{ form.tva_rate.label(class="input-group-text") }}
-                                        {% if title.startswith('Modifier Avoir') %}
-                                        {{ form.tva_rate(class="form-control", id="tva_rate", disabled=True) }}
-                                        {% else %}
-                                        {{ form.tva_rate(class="form-control", id="tva_rate", step="0.1") }}
-                                        {% endif %}
-                                        <span class="input-group-text">%</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card mb-4">
-                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                            <span>Lignes du document</span>
-                            {% if not title.startswith('Modifier Avoir') %}
-                            <button type="button" class="btn btn-sm btn-success" id="add-line">
-                                <i class="fas fa-plus"></i> Ajouter une ligne
-                            </button>
-                            {% endif %}
-                        </div>
-                        <div class="card-body">
-                            <div id="lignes-container">
-                                {% for ligne in form.lignes %}
-                                <div class="row mb-2 align-items-end ligne-item">
-                                    <div class="col-md-2">
-                                        {{ ligne.category.label(class="form-label small") }}
-                                        {% if title.startswith('Modifier Avoir') %}
-                                        {{ ligne.category(class="form-select form-select-sm category-select",
-                                        disabled=True) }}
-                                        {% else %}
-                                        {{ ligne.category(class="form-select form-select-sm category-select") }}
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-md-4">
-                                        {{ ligne.designation.label(class="form-label small") }}
-                                        {% if title.startswith('Modifier Avoir') %}
-                                        {{ ligne.designation(class="form-control form-control-sm", readonly=True) }}
-                                        {% else %}
-                                        {{ ligne.designation(class="form-control form-control-sm") }}
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-md-2 full-fields">
-                                        {{ ligne.quantite.label(class="form-label small") }}
-                                        {% if title.startswith('Modifier Avoir') %}
-                                        {{ ligne.quantite(class="form-control form-control-sm text-end", readonly=True)
-                                        }}
-                                        {% else %}
-                                        {{ ligne.quantite(class="form-control form-control-sm text-end") }}
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-md-2 full-fields">
-                                        {{ ligne.prix_unitaire.label(class="form-label small") }}
-                                        {% if title.startswith('Modifier Avoir') %}
-                                        {{ ligne.prix_unitaire(class="form-control form-control-sm text-end",
-                                        readonly=True) }}
-                                        {% else %}
-                                        {{ ligne.prix_unitaire(class="form-control form-control-sm text-end") }}
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-md-2">
-                                        {% if not title.startswith('Modifier Avoir') %}
-                                        <button type="button" class="btn btn-sm btn-outline-danger w-100 remove-line"
-                                            tabindex="-1">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                        {% endif %}
-                                    </div>
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.chantier_reference.label(class="form-label") }}
+                                {% if title.startswith('Modifier Avoir') %}
+                                {{ form.chantier_reference(class="form-control", readonly=True) }}
+                                {% else %}
+                                {{ form.chantier_reference(class="form-control") }}
+                                {% endif %}
+                                {% for error in form.chantier_reference.errors %}
+                                <div class="text-danger">{{ error }}</div>
                                 {% endfor %}
                             </div>
                         </div>
-                    </div>
 
-                    <div class="text-end">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="fas fa-save me-2"></i> Enregistrer
-                        </button>
+                        <!-- Section Contacts -->
+                        <div class="row border-top pt-3 mt-2">
+                            <div class="col-md-12 mb-2">
+                                <label class="form-label fw-bold"><i class="fas fa-address-book me-1"></i>
+                                    Contacts</label>
+                            </div>
+                            <div class="col-md-12 mb-3">
+                                {{ form.cc_contacts.label(class="form-label") }}
+                                <div class="card p-2" style="max-height: 150px; overflow-y: auto;">
+                                    <div id="cc_contacts_container">
+                                        <span class="text-muted small">Sélectionnez un client d'abord...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Data attributes for pre-selection (Edit mode) -->
+                        <input type="hidden" id="selected-cc-ids"
+                            value="{{ form.cc_contacts.data|tojson if form.cc_contacts.data else '[]' }}">
                     </div>
-                </form>
             </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-check form-switch">
+                                {% if title.startswith('Modifier Avoir') %}
+                                {{ form.autoliquidation(class="form-check-input", disabled=True,
+                                id="autoliquidation") }}
+                                {% else %}
+                                {{ form.autoliquidation(class="form-check-input", id="autoliquidation") }}
+                                {% endif %}
+                                {{ form.autoliquidation.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            {% if form.paid %}
+                            <div class="form-check form-switch">
+                                {% if title.startswith('Modifier Avoir') %}
+                                {{ form.paid(class="form-check-input", disabled=True) }}
+                                {% else %}
+                                {{ form.paid(class="form-check-input") }}
+                                {% endif %}
+                                {{ form.paid.label(class="form-check-label") }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                {{ form.tva_rate.label(class="input-group-text") }}
+                                {% if title.startswith('Modifier Avoir') %}
+                                {{ form.tva_rate(class="form-control", id="tva_rate", disabled=True) }}
+                                {% else %}
+                                {{ form.tva_rate(class="form-control", id="tva_rate", step="0.1") }}
+                                {% endif %}
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <span>Lignes du document</span>
+                    {% if not title.startswith('Modifier Avoir') %}
+                    <button type="button" class="btn btn-sm btn-success" id="add-line">
+                        <i class="fas fa-plus"></i> Ajouter une ligne
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <div id="lignes-container">
+                        {% for ligne in form.lignes %}
+                        <div class="row mb-2 align-items-end ligne-item">
+                            <div class="col-md-2">
+                                {{ ligne.category.label(class="form-label small") }}
+                                {% if title.startswith('Modifier Avoir') %}
+                                {{ ligne.category(class="form-select form-select-sm category-select",
+                                disabled=True) }}
+                                {% else %}
+                                {{ ligne.category(class="form-select form-select-sm category-select") }}
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                {{ ligne.designation.label(class="form-label small") }}
+                                {% if title.startswith('Modifier Avoir') %}
+                                {{ ligne.designation(class="form-control form-control-sm", readonly=True) }}
+                                {% else %}
+                                {{ ligne.designation(class="form-control form-control-sm") }}
+                                {% endif %}
+                            </div>
+                            <div class="col-md-2 full-fields">
+                                {{ ligne.quantite.label(class="form-label small") }}
+                                {% if title.startswith('Modifier Avoir') %}
+                                {{ ligne.quantite(class="form-control form-control-sm text-end", readonly=True)
+                                }}
+                                {% else %}
+                                {{ ligne.quantite(class="form-control form-control-sm text-end") }}
+                                {% endif %}
+                            </div>
+                            <div class="col-md-2 full-fields">
+                                {{ ligne.prix_unitaire.label(class="form-label small") }}
+                                {% if title.startswith('Modifier Avoir') %}
+                                {{ ligne.prix_unitaire(class="form-control form-control-sm text-end",
+                                readonly=True) }}
+                                {% else %}
+                                {{ ligne.prix_unitaire(class="form-control form-control-sm text-end") }}
+                                {% endif %}
+                            </div>
+                            <div class="col-md-2">
+                                {% if not title.startswith('Modifier Avoir') %}
+                                <button type="button" class="btn btn-sm btn-outline-danger w-100 remove-line"
+                                    tabindex="-1">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-end">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-save me-2"></i> Enregistrer
+                </button>
+            </div>
+            </form>
         </div>
     </div>
+</div>
 </div>
 
 <div id="ligne-template" class="d-none">
@@ -217,6 +238,60 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         console.log("DOM Loaded - Facture Form Script Init");
+
+        // CONTACTS MANAGEMENT
+        const clientSelect = document.getElementById('client_id');
+        const ccContainer = document.getElementById('cc_contacts_container');
+        const selectedCcIdsRaw = document.getElementById('selected-cc-ids')?.value;
+
+        let selectedCcIds = [];
+        try {
+            selectedCcIds = JSON.parse(selectedCcIdsRaw || '[]');
+            if (!Array.isArray(selectedCcIds)) selectedCcIds = [selectedCcIds];
+        } catch (e) { selectedCcIds = []; }
+
+        function loadContacts(clientId) {
+            if (!clientId) { // contactSelect might be missing in read-only mode
+                if (ccContainer) ccContainer.innerHTML = '<span class="text-muted small">Sélectionnez un client d\'abord...</span>';
+                return;
+            }
+
+            fetch(`/clients/api/client/${clientId}/contacts`)
+                .then(response => response.json())
+                .then(data => {
+                    // Populate CC Checkboxes
+                    if (ccContainer) {
+                        if (data.contacts.length === 0) {
+                            ccContainer.innerHTML = '<span class="text-muted small">Aucun contact trouvé pour ce client.</span>';
+                        } else {
+                            let checkboxes = '';
+                            data.contacts.forEach(c => {
+                                const isChecked = selectedCcIds.some(id => id == c.id) ? 'checked' : '';
+                                checkboxes += `
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="cc_contacts" value="${c.id}" id="cc_${c.id}" ${isChecked}>
+                                        <label class="form-check-label small" for="cc_${c.id}">
+                                            ${c.nom}
+                                        </label>
+                                    </div>
+                                `;
+                            });
+                            ccContainer.innerHTML = checkboxes;
+                        }
+                    }
+                })
+                .catch(error => console.error('Error fetching contacts:', error));
+        }
+
+        if (clientSelect) {
+            clientSelect.addEventListener('change', function () {
+                loadContacts(this.value);
+            });
+            if (clientSelect.value) {
+                loadContacts(clientSelect.value);
+            }
+        }
+
         function updateLineVisibility(row) {
             const select = row.querySelector('.category-select');
             const qteInput = row.querySelector('input[name*="quantite"]');

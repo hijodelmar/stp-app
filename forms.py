@@ -43,8 +43,14 @@ class LigneDocumentForm(FlaskForm):
     prix_unitaire = FloatField('Prix Unitaire HT', default=0.0, validators=[InputRequired()])
     # Total ligne calculated separately or in JS
 
+from wtforms import StringField, SubmitField, IntegerField, FloatField, BooleanField, SelectField, FieldList, FormField, TextAreaField, SelectMultipleField
+
 class DocumentForm(FlaskForm):
     client_id = SelectField('Client', coerce=int, validators=[DataRequired()])
+    # Contacts en Copie (CC)
+    # Destinataires (Anciennement CC, maintenant destinataires directs)
+    cc_contacts = SelectMultipleField('Destinataires', coerce=int, validators=[Optional()], validate_choice=False)
+    
     date = StringField('Date', validators=[DataRequired()]) # We'll use a date picker
     validity_duration = IntegerField('Durée de validité (mois)', default=1)
     tva_rate = FloatField('Taux TVA (%)', default=20.0, validators=[InputRequired()])

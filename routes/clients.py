@@ -1,10 +1,9 @@
 from datetime import datetime
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from extensions import db
-from models import Client
+from models import Client, ClientContact
 from forms import ClientForm
 from sqlalchemy.exc import IntegrityError
-
 from flask_login import login_required, current_user
 from utils.auth import role_required
 
@@ -44,6 +43,11 @@ def add():
         db.session.add(client)
         try:
             db.session.commit()
+            
+            # Traitement des contacts
+            process_contacts(client)
+            db.session.commit()
+            
             flash('Client ajouté avec succès.', 'success')
             return redirect(url_for('clients.index'))
         except IntegrityError:
@@ -67,6 +71,9 @@ def edit(id):
             client.email = None
             
         try:
+            # Traitement des contacts
+            process_contacts(client)
+            
             db.session.commit()
             flash('Client modifié avec succès.', 'success')
             return redirect(url_for('clients.index'))
@@ -74,7 +81,63 @@ def edit(id):
             db.session.rollback()
             flash('Erreur : Un client avec cet email existe déjà.', 'danger')
             
-    return render_template('clients/form.html', form=form, title="Modifier Client")
+    return render_template('clients/form.html', form=form, title="Modifier Client", contacts=client.contacts)
+
+def process_contacts(client):
+    # Récupérer tous les champs du formulaire qui commencent par 'contacts-'
+    # Format: contacts-INDEX-FIELD
+    # On va regrouper par index
+    contacts_data = {}
+    
+    for key, value in request.form.items():
+        if key.startswith('contacts-'):
+            parts = key.split('-')
+            if len(parts) >= 3:
+                index = parts[1]
+                field = parts[2]
+                if index not in contacts_data:
+                    contacts_data[index] = {}
+                contacts_data[index][field] = value.strip()
+
+    # Liste des IDs actuels pour suppression si absents
+    existing_ids = [c.id for c in client.contacts]
+    processed_ids = []
+
+    for index, data in contacts_data.items():
+        c_id = data.get('id')
+        nom = data.get('nom')
+        
+        if not nom: # Ignorer entrées vides
+            continue
+            
+        if c_id == 'new':
+            # Création
+            new_contact = ClientContact(
+                client=client,
+                nom=nom,
+                email=data.get('email') or None,
+                telephone=data.get('telephone') or None,
+                fonction=data.get('fonction') or None
+            )
+            db.session.add(new_contact)
+        else:
+            # Mise à jour
+            try:
+                c_id_int = int(c_id)
+                contact = ClientContact.query.get(c_id_int)
+                if contact and contact.client_id == client.id:
+                    contact.nom = nom
+                    contact.email = data.get('email') or None
+                    contact.telephone = data.get('telephone') or None
+                    contact.fonction = data.get('fonction') or None
+                    processed_ids.append(c_id_int)
+            except ValueError:
+                pass
+    
+    # Suppression des contacts qui ne sont plus dans le formulaire
+    for old_contact in client.contacts:
+        if old_contact.id not in processed_ids and old_contact.id in existing_ids:
+            db.session.delete(old_contact)
 
 @bp.route('/delete/<int:id>', methods=['POST'])
 @login_required
@@ -96,3 +159,10 @@ def delete(id):
         flash(f'Erreur lors de la suppression : {str(e)}', 'danger')
         
     return redirect(url_for('clients.index'))
+
+@bp.route('/api/client/<int:client_id>/contacts')
+@login_required
+def get_contacts(client_id):
+    client = Client.query.get_or_404(client_id)
+    contacts = [{'id': c.id, 'nom': c.nom, 'email': c.email} for c in client.contacts]
+    return {'contacts': contacts}

@@ -1,9 +1,9 @@
 from datetime import datetime
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from extensions import db
-from models import Document, LigneDocument, Client, CompanyInfo
-from forms import DocumentForm
+from models import Document, LigneDocument, Client, CompanyInfo, ClientContact
 
+from forms import DocumentForm
 from flask_login import login_required, current_user
 from utils.auth import role_required
 
@@ -32,7 +32,6 @@ def index():
 def add():
     # Typically avoirs are created from invoices, but standalone creation is possible
     form = DocumentForm()
-    form = DocumentForm()
     form.client_id.choices = [(c.id, c.raison_sociale) for c in Client.query.order_by(Client.raison_sociale).all()]
 
     if form.validate_on_submit():
@@ -52,6 +51,17 @@ def add():
             created_by_id=current_user.id,
             updated_by_id=current_user.id
         )
+
+        # Handle optional Primary Contact - REMOVED
+        # if form.contact_id.data:
+        #     document.contact_id = form.contact_id.data
+
+        # Handle CC Contacts
+        if form.cc_contacts.data:
+            cc_ids = form.cc_contacts.data
+            if cc_ids:
+                contacts = ClientContact.query.filter(ClientContact.id.in_(cc_ids)).all()
+                document.cc_contacts = contacts
         
         total_ht = 0
         for ligne_form in form.lignes:
@@ -108,6 +118,10 @@ def edit(id):
     if request.method == 'GET':
         if document.date:
             form.date.data = document.date.strftime('%Y-%m-%d')
+
+        # Manually populate CC contacts with IDs for the form
+        if document.cc_contacts:
+            form.cc_contacts.data = [c.id for c in document.cc_contacts]
 
     if form.validate_on_submit():
         # ONLY UPDATE THE DATE
@@ -207,6 +221,13 @@ def convert_from_facture(id):
         created_by_id=current_user.id,
         updated_by_id=current_user.id
     )
+
+    # Copy contacts from facture
+    # if facture.contact_id:
+    #     avoir.contact_id = facture.contact_id
+    
+    if facture.cc_contacts:
+        avoir.cc_contacts = list(facture.cc_contacts)
     
     # Clone lines
     for ligne in facture.lignes:

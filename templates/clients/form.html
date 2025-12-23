@@ -20,13 +20,7 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-md-6 mb-3">
-                            {{ form.email.label(class="form-label") }}
-                            {{ form.email(class="form-control") }}
-                            {% for error in form.email.errors %}
-                            <div class="text-danger small">{{ error }}</div>
-                            {% endfor %}
-                        </div>
+                        <!-- Email field removed per user request -->
                         <div class="col-md-6 mb-3">
                             {{ form.telephone.label(class="form-label") }}
                             {{ form.telephone(class="form-control") }}
@@ -59,6 +53,107 @@
                             {{ form.tva_intra(class="form-control") }}
                         </div>
                     </div>
+
+                    <div class="card mb-3">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <span>Contacts / Commerciaux</span>
+                            <button type="button" class="btn btn-sm btn-success" id="add-contact">
+                                <i class="fas fa-plus"></i> Ajouter un contact
+                            </button>
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table table-striped mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 25%">Nom</th>
+                                        <th style="width: 25%">Email</th>
+                                        <th style="width: 20%">Téléphone</th>
+                                        <th style="width: 20%">Fonction</th>
+                                        <th style="width: 10%"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="contacts-container">
+                                    {% if contacts %}
+                                    {% for contact in contacts %}
+                                    <tr class="contact-row">
+                                        <td>
+                                            <input type="hidden" name="contacts-{{ loop.index0 }}-id"
+                                                value="{{ contact.id }}">
+                                            <input type="text" class="form-control form-control-sm"
+                                                name="contacts-{{ loop.index0 }}-nom" value="{{ contact.nom }}"
+                                                required>
+                                        </td>
+                                        <td><input type="email" class="form-control form-control-sm"
+                                                name="contacts-{{ loop.index0 }}-email"
+                                                value="{{ contact.email or '' }}"></td>
+                                        <td><input type="text" class="form-control form-control-sm"
+                                                name="contacts-{{ loop.index0 }}-telephone"
+                                                value="{{ contact.telephone or '' }}"></td>
+                                        <td><input type="text" class="form-control form-control-sm"
+                                                name="contacts-{{ loop.index0 }}-fonction"
+                                                value="{{ contact.fonction or '' }}"></td>
+                                        <td class="text-center">
+                                            <button type="button" class="btn btn-sm btn-outline-danger remove-contact">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                            <div class="p-3 text-muted small text-center" id="no-contacts-msg"
+                                style="display: {{ 'none' if contacts else 'block' }}">
+                                Aucun contact supplémentaire configuré.
+                            </div>
+                        </div>
+                    </div>
+
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function () {
+                            const container = document.getElementById('contacts-container');
+                            const addButton = document.getElementById('add-contact');
+                            const noContactsMsg = document.getElementById('no-contacts-msg');
+
+                            // Fixed Jinja2 syntax error:
+                            let contactIndex = {{ contacts| length if contacts else 0
+                        }};
+
+                        addButton.addEventListener('click', function () {
+                            noContactsMsg.style.display = 'none';
+
+                            const tr = document.createElement('tr');
+                            tr.className = 'contact-row';
+                            tr.innerHTML = `
+            <td>
+                <input type="hidden" name="contacts-${contactIndex}-id" value="new">
+                <input type="text" class="form-control form-control-sm" name="contacts-${contactIndex}-nom" placeholder="Nom" required>
+            </td>
+            <td><input type="email" class="form-control form-control-sm" name="contacts-${contactIndex}-email" placeholder="Email"></td>
+            <td><input type="text" class="form-control form-control-sm" name="contacts-${contactIndex}-telephone" placeholder="Tél"></td>
+            <td><input type="text" class="form-control form-control-sm" name="contacts-${contactIndex}-fonction" placeholder="Fonction"></td>
+            <td class="text-center">
+                <button type="button" class="btn btn-sm btn-outline-danger remove-contact">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+
+                            container.appendChild(tr);
+                            contactIndex++;
+                        });
+
+                        container.addEventListener('click', function (e) {
+                            if (e.target.closest('.remove-contact')) {
+                                const row = e.target.closest('tr');
+                                row.remove();
+                                if (container.children.length === 0) {
+                                    noContactsMsg.style.display = 'block';
+                                }
+                            }
+                        });
+});
+                    </script>
 
                     <div class="d-grid gap-2 mt-4">
                         {{ form.submit(class="btn btn-primary btn-lg") }}

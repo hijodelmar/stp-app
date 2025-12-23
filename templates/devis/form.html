@@ -48,6 +48,25 @@
                                     {% endfor %}
                                 </div>
                             </div>
+
+                            <!-- Section Contacts -->
+                            <div class="row border-top pt-3 mt-2">
+                                <div class="col-md-12 mb-2">
+                                    <label class="form-label fw-bold"><i class="fas fa-address-book me-1"></i>
+                                        Contacts</label>
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    {{ form.cc_contacts.label(class="form-label") }}
+                                    <div class="card p-2" style="max-height: 150px; overflow-y: auto;">
+                                        <div id="cc_contacts_container">
+                                            <span class="text-muted small">Sélectionnez un client d'abord...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Data attributes for pre-selection (Edit mode) -->
+                            <input type="hidden" id="selected-cc-ids"
+                                value="{{ form.cc_contacts.data|tojson if form.cc_contacts.data else '[]' }}">
                         </div>
                     </div>
 
@@ -338,6 +357,63 @@
 
     // Initial Calculation
     calculateTotals();
+
+    // CONTACTS MANAGEMENT
+    const clientSelect = document.getElementById('client_id');
+    const ccContainer = document.getElementById('cc_contacts_container');
+    const selectedCcIdsRaw = document.getElementById('selected-cc-ids')?.value;
+
+    let selectedCcIds = [];
+    try {
+        selectedCcIds = JSON.parse(selectedCcIdsRaw || '[]');
+        // Handle case where Jinja outputs single ints as non-array or weird format (WTForms data vs API)
+        if (!Array.isArray(selectedCcIds)) selectedCcIds = [selectedCcIds];
+    } catch (e) {
+        selectedCcIds = [];
+    }
+
+    function loadContacts(clientId) {
+        if (!clientId) {
+            ccContainer.innerHTML = '<span class="text-muted small">Sélectionnez un client d\'abord...</span>';
+            return;
+        }
+
+        fetch(`/clients/api/client/${clientId}/contacts`)
+            .then(response => response.json())
+            .then(data => {
+                // Populate CC Checkboxes
+                if (data.contacts.length === 0) {
+                    ccContainer.innerHTML = '<span class="text-muted small">Aucun contact trouvé pour ce client.</span>';
+                } else {
+                    let checkboxes = '';
+                    data.contacts.forEach(c => {
+                        // Check if in selected list (ensure type matching string vs int)
+                        const isChecked = selectedCcIds.some(id => id == c.id) ? 'checked' : '';
+                        checkboxes += `
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="cc_contacts" value="${c.id}" id="cc_${c.id}" ${isChecked}>
+                                <label class="form-check-label small" for="cc_${c.id}">
+                                    ${c.nom}
+                                </label>
+                            </div>
+                        `;
+                    });
+                    ccContainer.innerHTML = checkboxes;
+                }
+            })
+            .catch(error => console.error('Error fetching contacts:', error));
+    }
+
+    if (clientSelect) {
+        clientSelect.addEventListener('change', function () {
+            loadContacts(this.value);
+        });
+
+        // Initial load if client is already selected (Edit mode)
+        if (clientSelect.value) {
+            loadContacts(clientSelect.value);
+        }
+    }
     });
 </script>
 {% endblock %}
