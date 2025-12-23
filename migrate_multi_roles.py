@@ -25,7 +25,8 @@ def migrate():
             ('devis_admin', 'Gestion des Devis'),
             ('facture_admin', 'Gestion des Factures'),
             ('avoir_admin', 'Gestion des Avoirs'),
-            ('client_admin', 'Gestion des Clients')
+            ('client_admin', 'Gestion des Clients'),
+            ('supplier_admin', 'Gestion des Fournisseurs et Bons de Commande')
         ]
         
         role_objs = {}

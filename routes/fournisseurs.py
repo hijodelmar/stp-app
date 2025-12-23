@@ -10,7 +10,7 @@ bp = Blueprint('fournisseurs', __name__)
 
 @bp.route('/')
 @login_required
-@role_required(['admin', 'manager', 'reporting', 'facture_admin', 'supplier_admin'])
+@role_required(['admin', 'manager', 'facture_admin', 'supplier_admin'])
 def index():
     q = request.args.get('q')
     if q:

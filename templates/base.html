@@ -31,7 +31,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     {% if current_user.is_authenticated %}
-                    {% if current_user.has_any_role(['admin', 'manager', 'reporting', 'client_admin']) %}
+                    {% if current_user.has_any_role(['admin', 'manager', 'client_admin']) %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('clients.index') }}"><i class="fas fa-users me-1"></i>
                             Clients</a>
@@ -62,11 +62,13 @@
                         <a class="nav-link" href="{{ url_for('avoirs.index') }}"><i
                                 class="fas fa-exchange-alt me-1"></i> Avoirs</a>
                     </li>
+                    {% endif %}
+
+                    {% if current_user.has_any_role(['admin', 'manager', 'avoir_admin']) %}
                     <li class="nav-item">
                         <a class="nav-link text-info" href="{{ url_for('bons_commande.index') }}"><i
                                 class="fas fa-shopping-cart me-1"></i> Commandes</a>
                     </li>
-
                     {% endif %}
 
                     {% if current_user.has_any_role(['admin', 'settings']) %}

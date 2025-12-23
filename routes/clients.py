@@ -12,7 +12,7 @@ bp = Blueprint('clients', __name__)
 
 @bp.route('/')
 @login_required
-@role_required(['admin', 'manager', 'reporting', 'client_admin'])
+@role_required(['admin', 'manager', 'client_admin'])
 def index():
     q = request.args.get('q')
     if q:
