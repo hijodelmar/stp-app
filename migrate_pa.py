@@ -185,11 +185,4 @@ with app.app_context():
     conn.commit()
     print("All migrations finished successfully.")
 
-except Exception as e:
-    # If conn is defined and open
-    if 'conn' in locals():
-        conn.rollback()
-    print(f"Migration failed global: {e}")
-finally:
-    if 'conn' in locals():
-        conn.close()
+    conn.close()
