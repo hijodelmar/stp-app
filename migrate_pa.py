@@ -103,66 +103,93 @@ with app.app_context():
     
     db.session.commit()
 
-# 7. Fix Document table schema
-print("Checking Document table schema...")
-conn = sqlite3.connect(db_path)
-cursor = conn.cursor()
+    # Create ClientContact and document_cc tables if they don't exist
+    print("Checking for new tables (ClientContact, document_cc)...")
+    from models import ClientContact, document_cc
+    try:
+        db.create_all()
+        print("New tables check/creation complete.")
+    except Exception as e:
+        print(f"Error creating new tables: {e}")
 
-try:
-    cursor.execute("PRAGMA table_info(document)")
-    cols = {c[1]: c for c in cursor.fetchall()}
-    
-    if 'supplier_id' in cols and cols['client_id'][3] == 0:
-        print("Document table already correct.")
-    else:
-        create_stmt = '''
-        CREATE TABLE document_new (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            type VARCHAR(20) NOT NULL,
-            numero VARCHAR(50) NOT NULL UNIQUE,
-            date DATETIME,
-            client_id INTEGER,
-            supplier_id INTEGER,
-            montant_ht FLOAT,
-            tva FLOAT,
-            montant_ttc FLOAT,
-            autoliquidation BOOLEAN,
-            tva_rate FLOAT,
-            paid BOOLEAN,
-            client_reference VARCHAR(50),
-            chantier_reference VARCHAR(100),
-            validity_duration INTEGER,
-            pdf_path VARCHAR(200),
-            sent_at DATETIME,
-            created_at DATETIME,
-            updated_at DATETIME,
-            created_by_id INTEGER,
-            updated_by_id INTEGER,
-            source_document_id INTEGER,
-            FOREIGN KEY(client_id) REFERENCES client (id),
-            FOREIGN KEY(supplier_id) REFERENCES supplier (id),
-            FOREIGN KEY(created_by_id) REFERENCES user (id),
-            FOREIGN KEY(updated_by_id) REFERENCES user (id),
-            FOREIGN KEY(source_document_id) REFERENCES document (id)
-        )
-        '''
-        cursor.execute(create_stmt)
+    # 7. Fix Document table schema
+    print("Checking Document table schema...")
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    try:
         cursor.execute("PRAGMA table_info(document)")
-        old_cols = [c[1] for c in cursor.fetchall()]
-        cursor.execute("PRAGMA table_info(document_new)")
-        new_cols = [c[1] for c in cursor.fetchall()]
-        common_cols = [c for c in old_cols if c in new_cols]
-        cols_str = ", ".join(common_cols)
-        cursor.execute(f"INSERT INTO document_new ({cols_str}) SELECT {cols_str} FROM document")
-        cursor.execute("DROP TABLE document")
-        cursor.execute("ALTER TABLE document_new RENAME TO document")
-        print("Document table updated.")
+        cols = {c[1]: c for c in cursor.fetchall()}
+        
+        # Check if we need to migrate (this is a simplified check, ideally we check for all columns)
+        # using contact_id as a marker for the latest version
+        if 'contact_id' in cols and 'supplier_id' in cols:
+            print("Document table seems up to date (has contact_id and supplier_id).")
+        else:
+            print("Migrating Document table schema...")
+            # Create new table with ALL current columns
+            create_stmt = '''
+            CREATE TABLE document_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                type VARCHAR(20) NOT NULL,
+                numero VARCHAR(50) NOT NULL UNIQUE,
+                date DATETIME,
+                client_id INTEGER,
+                supplier_id INTEGER,
+                montant_ht FLOAT,
+                tva FLOAT,
+                montant_ttc FLOAT,
+                autoliquidation BOOLEAN,
+                tva_rate FLOAT,
+                paid BOOLEAN,
+                client_reference VARCHAR(50),
+                chantier_reference VARCHAR(100),
+                validity_duration INTEGER,
+                pdf_path VARCHAR(200),
+                sent_at DATETIME,
+                created_at DATETIME,
+                updated_at DATETIME,
+                created_by_id INTEGER,
+                updated_by_id INTEGER,
+                source_document_id INTEGER,
+                contact_id INTEGER,
+                FOREIGN KEY(client_id) REFERENCES client (id),
+                FOREIGN KEY(supplier_id) REFERENCES supplier (id),
+                FOREIGN KEY(created_by_id) REFERENCES user (id),
+                FOREIGN KEY(updated_by_id) REFERENCES user (id),
+                FOREIGN KEY(source_document_id) REFERENCES document (id),
+                FOREIGN KEY(contact_id) REFERENCES client_contact (id)
+            )
+            '''
+            cursor.execute(create_stmt)
+            
+            # Copy data
+            cursor.execute("PRAGMA table_info(document)")
+            old_cols = [c[1] for c in cursor.fetchall()]
+            cursor.execute("PRAGMA table_info(document_new)")
+            new_cols = [c[1] for c in cursor.fetchall()]
+            
+            # Intersection of columns
+            common_cols = [c for c in old_cols if c in new_cols]
+            cols_str = ", ".join(common_cols)
+            
+            cursor.execute(f"INSERT INTO document_new ({cols_str}) SELECT {cols_str} FROM document")
+            cursor.execute("DROP TABLE document")
+            cursor.execute("ALTER TABLE document_new RENAME TO document")
+            print("Document table updated successfully.")
+            
+    except Exception as e:
+        print(f"Error during Document table migration: {e}")
+        raise e
 
     conn.commit()
     print("All migrations finished successfully.")
 
 except Exception as e:
-    conn.rollback()
-    print(f"Migration failed: {e}")
+    # If conn is defined and open
+    if 'conn' in locals():
+        conn.rollback()
+    print(f"Migration failed global: {e}")
 finally:
-    conn.close()
+    if 'conn' in locals():
+        conn.close()
