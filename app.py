@@ -3,9 +3,11 @@ from flask import Flask, render_template, request, session, redirect, url_for, j
 from flask_login import login_required, current_user, logout_user
 from config import Config
 from extensions import db, login_manager
-from dotenv import load_dotenv
-
-load_dotenv()
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 def create_app(config_class=Config):
     app = Flask(__name__)
