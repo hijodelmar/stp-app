@@ -11,16 +11,15 @@ bp = Blueprint('chat', __name__)
 executor = ChatExecutor()
 # AI Agent is initialized lazily or here if env var is ready
 try:
-    agent = AIAgent()
-except Exception as e:
-    print(f"Warning: AI Agent not initialized: {e}")
-    agent = None
-
 @bp.route('/send', methods=['POST'])
 @login_required
 def send_message():
+    global agent
     try:
-        if agent:
+        if agent is None:
+            from services.ai_agent import AIAgent
+            agent = AIAgent()
+        else:
             agent.refresh_settings()
 
         if not agent or not agent.provider:
