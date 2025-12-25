@@ -218,7 +218,13 @@
             </td>
         </tr>
         <tr>
-            <td colspan="4" style="text-align: left; padding: 10px; border: none;">
+            <td>
+                <span class="stats-label">Taux Transformation</span>
+                <span class="stats-value" style="color: #2e7d32;">{{ "%.0f"|format(stats.conversion_rate) }}%</span>
+                <div style="font-size: 9px; color: #666; margin-top: 2px;">{{ stats.converted_devis }} signés / {{
+                    stats.total_devis }}</div>
+            </td>
+            <td colspan="3" style="text-align: left; padding: 15px;">
                 <span class="stats-label">Dont CA réalisé en Auto-liquidation : <strong style="color: #7b1fa2;">{{
                         "%.2f"|format(stats.total_autoliq) }} €</strong></span>
             </td>

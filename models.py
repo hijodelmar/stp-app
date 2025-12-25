@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from extensions import db
 from flask_login import UserMixin
@@ -207,6 +208,33 @@ class CompanyInfo(db.Model):
     smtp_use_ssl = db.Column(db.Boolean, default=False)
     mail_default_sender = db.Column(db.String(100), nullable=True)
     email_signature = db.Column(db.Text, nullable=True)
+    
+    # Theme settings
+    theme = db.Column(db.String(50), default='default')
+
+class AISettings(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    enabled = db.Column(db.Boolean, default=True)
+    provider = db.Column(db.String(20), default='google') # 'google' or 'openai'
+    api_key = db.Column(db.String(200), nullable=True)
+    model_name = db.Column(db.String(100), nullable=True)
+    
+    # Audit trail
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def __repr__(self):
-        return f'<CompanyInfo {self.nom}>'
+        return f'<AISettings {self.provider} ({"Enabled" if self.enabled else "Disabled"})>'
+
+    @staticmethod
+    def get_settings():
+        settings = AISettings.query.first()
+        if not settings:
+            settings = AISettings(
+                enabled=True,
+                provider='google',
+                api_key=os.environ.get('GOOGLE_API_KEY'),
+                model_name='gemini-1.5-flash-latest'
+            )
+            db.session.add(settings)
+            db.session.commit()
+        return settings

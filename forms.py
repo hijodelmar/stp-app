@@ -95,4 +95,11 @@ class CompanyInfoForm(FlaskForm):
     mail_default_sender = StringField('Nom de l\'expéditeur (ex: STP Gestion)')
     email_signature = TextAreaField('Signature Email (HTML)')
     
+    # Theme
+    theme = SelectField('Thème de l\'interface', choices=[
+        ('default', 'STP Classique (Bleu/Or)'),
+        ('dark', 'Mode Sombre / Nuit'),
+        ('ocean', 'Océan (Teintes Cyan/Bleu)')
+    ], default='default')
+    
     submit = SubmitField('Enregistrer')

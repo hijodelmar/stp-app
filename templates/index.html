@@ -70,6 +70,32 @@
             </div>
         </div>
     </div>
+    <!-- Performance Card -->
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="flex-shrink-0 p-2 rounded" style="background-color: #e8f5e9; color: #2e7d32;">
+                        <i class="fas fa-bullseye fa-lg"></i>
+                    </div>
+                    <div class="ms-3 flex-grow-1">
+                        <small class="text-muted d-block">Taux de Transformation</small>
+                        <div class="d-flex align-items-baseline">
+                            <h4 class="mb-0 fw-bold" style="color: #2e7d32;"><span class="privacy-value">{{
+                                    "%.0f"|format(stats.conversion_rate) }}%</span></h4>
+                            <span class="ms-2 text-muted small" style="font-size: 0.8em;"><span
+                                    class="privacy-value">({{ stats.converted_devis }}/{{ stats.total_devis
+                                    }})</span></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="progress mt-2" style="height: 6px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ stats.conversion_rate }}%">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="col-md-3">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
@@ -86,7 +112,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-lg-4 col-md-6">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
                 <div class="d-flex align-items-center mb-2">
@@ -102,7 +128,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-lg-4 col-md-6">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
                 <div class="d-flex align-items-center mb-2">
@@ -118,7 +144,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-lg-4 col-md-6">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
                 <div class="d-flex align-items-center mb-2">

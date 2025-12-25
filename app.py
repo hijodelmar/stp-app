@@ -3,6 +3,9 @@ from flask import Flask, render_template, request, session, redirect, url_for, j
 from flask_login import login_required, current_user, logout_user
 from config import Config
 from extensions import db, login_manager
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -67,6 +70,9 @@ def create_app(config_class=Config):
     from routes.mail import bp as mail_bp
     app.register_blueprint(mail_bp, url_prefix='/mail')
 
+    from routes.chat import bp as chat_bp
+    app.register_blueprint(chat_bp, url_prefix='/api/chat')
+
     @app.before_request
     def before_request():
         if current_user.is_authenticated:
@@ -85,6 +91,14 @@ def create_app(config_class=Config):
             from datetime import datetime
             current_user.last_active = datetime.utcnow()
             db.session.commit()
+
+    # Inject CompanyInfo globally for templates (Theme, Logo, etc.)
+    @app.context_processor
+    def inject_global_data():
+        from models import CompanyInfo, AISettings
+        info = CompanyInfo.query.first()
+        ai_settings = AISettings.get_settings()
+        return dict(company_info=info, ai_settings=ai_settings)
 
     @app.route('/api/active-users')
     @login_required
@@ -239,6 +253,34 @@ def create_app(config_class=Config):
         if datetime.now().year not in available_years:
             available_years.insert(0, datetime.now().year)
 
+        # 6. Statistiques de Conversion (Performance Commerciale)
+        # Total Devis créés dans la période
+        total_devis = db.session.query(func.count(Document.id)).filter(
+            Document.type == 'devis',
+            Document.date >= start_date,
+            Document.date < end_date
+        ).scalar() or 0
+
+        # Devis convertis (ceux qui ont généré une facture)
+        # On regarde si le devis a un 'generated_documents' de type facture
+        # Note: generated_documents est une relation, mais pour compter efficacement on peut faire une sous-requête ou join
+        # Une facture a source_document_id = id_du_devis
+        
+        # Sous-requête des IDs de devis qui sont source d'une facture
+        converted_ids = db.session.query(Document.source_document_id).filter(
+            Document.type == 'facture',
+            Document.source_document_id.isnot(None)
+        ).subquery()
+        
+        converted_devis = db.session.query(func.count(Document.id)).filter(
+            Document.type == 'devis',
+            Document.date >= start_date,
+            Document.date < end_date,
+            Document.id.in_(converted_ids)
+        ).scalar() or 0
+        
+        conversion_rate = (converted_devis / total_devis * 100) if total_devis > 0 else 0.0
+
         return {
             'total_ht': total_ht,
             'total_ttc': total_ttc,
@@ -254,7 +296,10 @@ def create_app(config_class=Config):
             'available_years': available_years,
             'current_year': year_filter,
             'start_date': date_start_str,
-            'end_date': date_end_str
+            'end_date': date_end_str,
+            'total_devis': total_devis,
+            'converted_devis': converted_devis,
+            'conversion_rate': conversion_rate
         }
 
     @app.route('/')

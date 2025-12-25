@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <h4 class="mb-0 text-primary"><i class="fas fa-robot me-2"></i>Paramétrage de l'Assistant IA</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    <!-- Toggle Assistant -->
+                    <div class="form-check form-switch mb-4">
+                        <input class="form-check-input" type="checkbox" id="enabled" name="enabled" {% if
+                            settings.enabled %}checked{% endif %}>
+                        <label class="form-check-label h5 mb-0" for="enabled">Activer l'assistant IA</label>
+                        <div class="form-text">Si désactivé, le widget de chat sera masqué pour tous les utilisateurs.
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Provider Selection -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Fournisseur d'IA (LLM Provider)</label>
+                        <select class="form-select" name="provider" id="providerSelect">
+                            <option value="google" {% if settings.provider=='google' %}selected{% endif %}>Google Gemini
+                                (Recommandé)</option>
+                            <option value="openai" {% if settings.provider=='openai' %}selected{% endif %}>OpenAI GPT
+                                (Bêta)</option>
+                        </select>
+                    </div>
+
+                    <!-- API Key -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Clé API</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-key"></i></span>
+                            <input type="password" class="form-control" name="api_key"
+                                value="{{ settings.api_key or '' }}" placeholder="Entrez votre clé API...">
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword(this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="form-text text-muted small mt-1">
+                            Cette clé sera stockée en base de données. Ne la partagez jamais.
+                        </div>
+                    </div>
+
+                    <!-- Model Name -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Modèle spécifique</label>
+                        <input type="text" class="form-control" name="model_name"
+                            value="{{ settings.model_name or '' }}" placeholder="ex: gemini-1.5-flash-latest ou gpt-4o">
+                        <div class="form-text small">Laissez vide pour utiliser le modèle par défaut.</div>
+                    </div>
+
+                    <div class="d-grid mt-5">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save me-2"></i>Enregistrer les paramètres
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Documentation Card -->
+        <div class="card mt-4 border-0 shadow-sm bg-light">
+            <div class="card-body">
+                <h5><i class="fas fa-info-circle me-2"></i>Aide au paramétrage</h5>
+                <p class="small text-muted mb-0">
+                    <strong>Google Gemini:</strong> Clé sur <a href="https://aistudio.google.com/"
+                        target="_blank">Google AI Studio</a>. Modèles: <code>gemini-1.5-flash</code>,
+                    <code>gemini-1.5-pro</code>, <code>gemini-2.0-flash-exp</code>.<br>
+                    <strong>OpenAI GPT:</strong> Clé sur <a href="https://platform.openai.com/"
+                        target="_blank">OpenAI</a>. Modèles: <code>gpt-4o-mini</code>, <code>gpt-4o</code>.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function togglePassword(btn) {
+        const input = btn.parentElement.querySelector('input');
+        if (input.type === "password") {
+            input.type = "text";
+            btn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+        } else {
+            input.type = "password";
+            btn.innerHTML = '<i class="fas fa-eye"></i>';
+        }
+    }
+</script>
+{% endblock %}

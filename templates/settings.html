@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1><i class="fas fa-cog me-2"></i>Paramètres Société</h1>
+    <h1><i class="fas fa-cog me-2"></i>Paramètres</h1>
     <div>
         <a href="{{ url_for('settings.template_editor') }}" class="btn btn-warning me-2"><i
                 class="fas fa-paint-brush"></i> Modifier le Template PDF</a>
@@ -10,185 +10,213 @@
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-8 mx-auto">
-        <div class="card">
-            <div class="card-body">
-                <form method="POST" enctype="multipart/form-data">
-                    {{ form.hidden_tag() }}
+<ul class="nav nav-tabs mb-4" id="settingsTabs" role="tablist">
+    <li class="nav-item">
+        <button class="nav-link {% if request.args.get('tab') != 'ai' %}active{% endif %}" id="company-tab"
+            data-bs-toggle="tab" data-bs-target="#company" type="button">Société & Apparence</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link {% if request.args.get('tab') == 'ai' %}active{% endif %}" id="ai-tab"
+            data-bs-toggle="tab" data-bs-target="#ai" type="button">Assistant IA</button>
+    </li>
+</ul>
 
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">{{ form.nom.label }}</label>
-                            {{ form.nom(class="form-control") }}
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">{{ form.telephone.label }}</label>
-                            {{ form.telephone(class="form-control") }}
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">{{ form.adresse.label }}</label>
-                        {{ form.adresse(class="form-control") }}
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <label class="form-label">{{ form.cp.label }}</label>
-                            {{ form.cp(class="form-control") }}
-                        </div>
-                        <div class="col-md-8">
-                            <label class="form-label">{{ form.ville.label }}</label>
-                            {{ form.ville(class="form-control") }}
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">{{ form.email.label }}</label>
-                        {{ form.email(class="form-control") }}
-                    </div>
-
-                    <hr>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">{{ form.ville_signature.label }}</label>
-                            {{ form.ville_signature(class="form-control") }}
-                            <div class="form-text">Utilisé pour "Fait à [Ville], le..."</div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">{{ form.logo.label }}</label>
-                            {{ form.logo(class="form-control") }}
-                            {% if info.logo_path %}
-                            <div class="mt-2">
-                                <small>Logo actuel :</small><br>
-                                <img src="{{ url_for('static', filename=info.logo_path) }}" alt="Logo"
-                                    style="max-height: 50px;">
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">{{ form.iban.label }}</label>
-                        {{ form.iban(class="form-control") }}
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">{{ form.conditions_reglement.label }}</label>
-                        {{ form.conditions_reglement(class="form-control", rows=2) }}
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">{{ form.footer_info.label }}</label>
-                        {{ form.footer_info(class="form-control", rows=4) }}
-                        <div class="form-text">Ce texte apparaîtra en bas de chaque page (SIRET, TVA, Assurances...).
-                        </div>
-                    </div>
-
-                    <div class="card bg-light mb-4 shadow-sm border-0">
-                        <div class="card-header bg-dark text-white rounded-top">
-                            <h5 class="mb-0"><i class="fas fa-envelope me-2"></i>Configuration Email (SMTP)</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row mb-3">
-                                <div class="col-md-8">
-                                    <label class="form-label">{{ form.smtp_server.label }}</label>
-                                    {{ form.smtp_server(class="form-control", placeholder="ex: smtp.gmail.com") }}
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">{{ form.smtp_port.label }}</label>
-                                    {{ form.smtp_port(class="form-control", placeholder="587") }}
-                                </div>
-                            </div>
+<div class="tab-content" id="settingsTabsContent">
+    <!-- Company Settings Tab -->
+    <div class="tab-pane fade {% if request.args.get('tab') != 'ai' %}show active{% endif %}" id="company">
+        <div class="row">
+            <div class="col-md-10 mx-auto">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <form method="POST" enctype="multipart/form-data">
+                            {{ form.hidden_tag() }}
                             <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <label class="form-label">{{ form.smtp_user.label }}</label>
-                                    {{ form.smtp_user(class="form-control", placeholder="votre@email.com") }}
+                                    <label class="form-label">{{ form.nom.label }}</label>
+                                    {{ form.nom(class="form-control") }}
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label">{{ form.smtp_password.label }}</label>
-                                    {{ form.smtp_password(class="form-control") }}
-                                    <div class="form-text">Si vous utilisez Gmail, créez un "Mot de passe
-                                        d'application".</div>
+                                    <label class="form-label">{{ form.telephone.label }}</label>
+                                    {{ form.telephone(class="form-control") }}
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">{{ form.mail_default_sender.label }}</label>
-                                {{ form.mail_default_sender(class="form-control", placeholder="STP Gestion
-                                <votre@email.com>") }}
+                                <label class="form-label">{{ form.adresse.label }}</label>
+                                {{ form.adresse(class="form-control") }}
                             </div>
-                            <div class="row">
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">{{ form.cp.label }}</label>
+                                    {{ form.cp(class="form-control") }}
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label">{{ form.ville.label }}</label>
+                                    {{ form.ville(class="form-control") }}
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">{{ form.email.label }}</label>
+                                {{ form.email(class="form-control") }}
+                            </div>
+
+                            <hr class="my-4">
+
+                            <!-- Rest of the form remains mostly the same, ensuring all original cards are kept! -->
+                            <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <div class="form-check form-switch">
-                                        {{ form.smtp_use_tls(class="form-check-input") }}
-                                        <label class="form-check-label">{{ form.smtp_use_tls.label }}</label>
+                                    <label class="form-label">{{ form.ville_signature.label }}</label>
+                                    {{ form.ville_signature(class="form-control") }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">{{ form.logo.label }}</label>
+                                    {{ form.logo(class="form-control") }}
+                                    {% if info.logo_path %}
+                                    <div class="mt-2"><img src="{{ url_for('static', filename=info.logo_path) }}"
+                                            style="max-height: 50px;"></div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">{{ form.iban.label }}</label>
+                                {{ form.iban(class="form-control") }}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">{{ form.footer_info.label }}</label>
+                                {{ form.footer_info(class="form-control", rows=3) }}
+                            </div>
+
+                            <div class="card bg-light mb-4 border-0 shadow-sm">
+                                <div class="card-header bg-dark text-white rounded-top">
+                                    <h5 class="mb-0"><i class="fas fa-palette me-2"></i>Apparence</h5>
+                                </div>
+                                <div class="card-body">
+                                    <label class="form-label">{{ form.theme.label }}</label>
+                                    {{ form.theme(class="form-select") }}
+                                </div>
+                            </div>
+
+                            <div class="card bg-light mb-4 border-0 shadow-sm">
+                                <div class="card-header bg-dark text-white rounded-top">
+                                    <h5 class="mb-0"><i class="fas fa-envelope me-2"></i>Email (SMTP)</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row mb-3">
+                                        <div class="col-md-8">
+                                            <label class="form-label">{{ form.smtp_server.label }}</label>
+                                            {{ form.smtp_server(class="form-control") }}
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">{{ form.smtp_port.label }}</label>
+                                            {{ form.smtp_port(class="form-control") }}
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">{{ form.smtp_user.label }}</label>
+                                            {{ form.smtp_user(class="form-control") }}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">{{ form.smtp_password.label }}</label>
+                                            {{ form.smtp_password(class="form-control") }}
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">{{ form.smtp_use_tls(class="form-check-input") }} <label
+                                                class="form-check-label">{{ form.smtp_use_tls.label }}</label></div>
+                                        <div class="col-md-6">{{ form.smtp_use_ssl(class="form-check-input") }} <label
+                                                class="form-check-label">{{ form.smtp_use_ssl.label }}</label></div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="form-check form-switch">
-                                        {{ form.smtp_use_ssl(class="form-check-input") }}
-                                        <label class="form-check-label">{{ form.smtp_use_ssl.label }}</label>
+                            </div>
+
+                            <div class="card bg-light mb-4 shadow-sm border-0">
+                                <div
+                                    class="card-header bg-dark text-white rounded-top d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0"><i class="fas fa-signature me-2"></i>Signature Email</h5>
+                                    <button type="button" class="btn btn-sm btn-outline-light" id="toggle-source">
+                                        <i class="fas fa-code me-1"></i> Mode Code HTML
+                                    </button>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Visual Editor Container -->
+                                    <div id="visual-editor-wrapper">
+                                        <div id="editor-container" style="height: 300px; background: white;"></div>
                                     </div>
-                                </div>
-                            </div>
-                            <div class="mt-3">
-                                <div class="alert alert-info py-2 small">
-                                    <i class="fas fa-info-circle me-1"></i> Ces réglages sont nécessaires pour envoyer
-                                    les PDFs directement par email aux clients.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
-                    <div class="card bg-light mb-4 shadow-sm border-0">
-                        <div
-                            class="card-header bg-dark text-white rounded-top d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0"><i class="fas fa-signature me-2"></i>Signature Email</h5>
-                            <button type="button" class="btn btn-sm btn-outline-light" id="toggle-source">
-                                <i class="fas fa-code me-1"></i> Mode Code HTML
-                            </button>
-                        </div>
-                        <div class="card-body">
-                            <!-- Visual Editor Container -->
-                            <div id="visual-editor-wrapper">
-                                <div id="editor-container" style="height: 300px; background: white;"></div>
-                            </div>
-
-                            <!-- Raw HTML Editor (hidden by default) -->
-                            <div id="html-editor-wrapper" class="d-none">
-                                <textarea id="html-editor" class="form-control"
-                                    style="height: 300px; font-family: monospace; font-size: 13px;">{{ info.email_signature if info.email_signature else '' }}</textarea>
-                                <div class="alert alert-warning mt-2 py-2 small">
-                                    <i class="fas fa-exclamation-triangle me-1"></i> <strong>Attention :</strong> Le
-                                    mode Code HTML permet des mises en page complexes (tableaux, styles inline) que
-                                    l'éditeur visuel pourrait simplifier si vous y retournez.
+                                    <!-- Raw HTML Editor (hidden by default) -->
+                                    <div id="html-editor-wrapper" class="d-none">
+                                        <textarea id="html-editor" class="form-control"
+                                            style="height: 300px; font-family: monospace; font-size: 13px;">{{ info.email_signature if info.email_signature else '' }}</textarea>
+                                    </div>
+                                    <div class="form-text mt-2 small text-muted">Utilisez l'éditeur visuel ou collez
+                                        votre code HTML.</div>
                                 </div>
                             </div>
 
+                            <div class="card mb-4 shadow-sm border-0 d-none" id="preview-card">
+                                <div class="card-header bg-info text-white py-1">
+                                    <h6 class="mb-0 small"><i class="fas fa-eye me-2"></i>Aperçu de la signature</h6>
+                                </div>
+                                <div class="card-body p-3 bg-white" id="signature-preview"
+                                    style="border: 1px solid #eee;"></div>
+                            </div>
+
+                            <div class="d-grid">
+                                {{ form.submit(class="btn btn-primary btn-lg", id="submit-btn") }}
+                            </div>
+
+                            <!-- Hidden Field for Signature (handled by script below) -->
                             {{ form.email_signature(class="d-none", id="email_signature_input") }}
-                            <div class="form-text mt-2">
-                                <i class="fas fa-info-circle me-1"></i> Pour les signatures complexes, utilisez le
-                                <strong>Mode Code HTML</strong> et collez votre code directement.
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Settings Tab -->
+    <div class="tab-pane fade {% if request.args.get('tab') == 'ai' %}show active{% endif %}" id="ai">
+        <div class="row">
+            <div class="col-md-8 mx-auto">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0"><i class="fas fa-robot me-2"></i>Assistant IA</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <form method="POST">
+                            <input type="hidden" name="ai_settings_submit" value="1">
+                            <div class="form-check form-switch mb-4">
+                                <input class="form-check-input" type="checkbox" id="enabled" name="enabled" {% if
+                                    ai_settings.enabled %}checked{% endif %}>
+                                <label class="form-check-label h5 mb-0" for="enabled">Activer l'assistant IA</label>
                             </div>
-                        </div>
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Fournisseur</label>
+                                <select class="form-select" name="provider">
+                                    <option value="google" {% if ai_settings.provider=='google' %}selected{% endif %}>
+                                        Google Gemini</option>
+                                    <option value="openai" {% if ai_settings.provider=='openai' %}selected{% endif %}>
+                                        OpenAI GPT</option>
+                                </select>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Clé API</label>
+                                <input type="password" class="form-control" name="api_key"
+                                    value="{{ ai_settings.api_key or '' }}">
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Modèle</label>
+                                <input type="text" class="form-control" name="model_name"
+                                    value="{{ ai_settings.model_name or '' }}" placeholder="ex: gemini-1.5-flash">
+                            </div>
+                            <div class="d-grid mt-4">
+                                <button type="submit" class="btn btn-primary">Enregistrer les paramètres IA</button>
+                            </div>
+                        </form>
                     </div>
-
-                    <div class="card mb-4 shadow-sm border-0 d-none" id="preview-card">
-                        <div class="card-header bg-info text-white">
-                            <h5 class="mb-0 small"><i class="fas fa-eye me-2"></i>Aperçu en direct</h5>
-                        </div>
-                        <div class="card-body p-3 bg-white" id="signature-preview"
-                            style="overflow-x: auto; border: 1px solid #eee;">
-                            <!-- Live Preview will appear here -->
-                        </div>
-                    </div>
-
-                    <div class="d-grid gap-2">
-                        {{ form.submit(class="btn btn-primary btn-lg", id="submit-btn") }}
-                    </div>
-                </form>
+                </div>
             </div>
         </div>
     </div>

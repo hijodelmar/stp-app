@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-theme="{{ company_info.theme if company_info else 'default' }}">
 
 <head>
     <meta charset="UTF-8">
@@ -8,6 +8,10 @@
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    {% if current_user.is_authenticated and ai_settings and ai_settings.enabled %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='chat.css') }}?v=1">
+    <script src="{{ url_for('static', filename='chat.js') }}?v=1" data-user-id="{{ current_user.id }}" defer></script>
+    {% endif %}
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
@@ -71,7 +75,7 @@
                     </li>
                     {% endif %}
 
-                    {% if current_user.has_any_role(['admin', 'settings']) %}
+                    {% if current_user.has_any_role(['admin', 'manager', 'settings']) %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('settings.index') }}" style="color: #D4AF37 !important;">
                             <i class="fas fa-cog me-1"></i> Paramètres
@@ -195,7 +199,7 @@
         let lastKnownUserIds = [];
         let userCache = new Map(); // Cache ID -> Username for logout notifications
         let isFirstLoad = true;
-        const myId = {{ current_user.id }};
+        const myId = Number("{{ current_user.id }}");
 
         function pollActiveUsers() {
             fetch('{{ url_for("active_users_api") }}')
