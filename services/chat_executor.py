@@ -27,7 +27,12 @@ class ChatExecutor:
             'send_email': self.send_email,
             'get_recent_activity': self.get_recent_activity,
             'reset': self.reset_context,
-            'add_contact': self.add_contact
+            'add_contact': self.add_contact,
+            'update_client': self.update_client,
+            'update_supplier': self.update_supplier,
+            'update_document': self.update_document,
+            'delete_line': self.delete_line,
+            'view_document': self.view_document
         }
 
     def reset_context(self, data=None):
@@ -80,6 +85,35 @@ class ChatExecutor:
         clients = Client.query.order_by(Client.raison_sociale).limit(limit).all()
         result = [{"id": c.id, "name": c.raison_sociale, "email": c.email} for c in clients]
         return {"status": "success", "data": result}
+        
+    def update_client(self, data):
+        client_id = data.get('client_id') or self.context.get('last_client_id')
+        if not client_id and data.get('client_name'):
+            client = Client.query.filter(Client.raison_sociale.ilike(f"%{data['client_name']}%")).first()
+            if client:
+                client_id = client.id
+                
+        if not client_id:
+            return {"status": "error", "message": "ID ou nom du client requis pour la modification."}
+            
+        client = Client.query.get(client_id)
+        if not client:
+            return {"status": "error", "message": "Client non trouvé."}
+            
+        # Update fields if provided
+        if 'adresse' in data: client.adresse = data['adresse']
+        if 'ville' in data: client.ville = data['ville']
+        if 'code_postal' in data: client.code_postal = data['code_postal']
+        if 'telephone' in data: client.telephone = data['telephone']
+        if 'email' in data: client.email = data['email']
+        if 'raison_sociale' in data: client.raison_sociale = data['raison_sociale']
+        
+        db.session.commit()
+        return {
+            "status": "success", 
+            "message": f"Client {client.raison_sociale} mis à jour avec succès.",
+            "data": {"id": client.id, "type": "client", "name": client.raison_sociale}
+        }
 
     def add_contact(self, data):
         client_id = data.get('client_id') or self.context.get('last_client_id')
@@ -134,6 +168,35 @@ class ChatExecutor:
         suppliers = Supplier.query.order_by(Supplier.raison_sociale).limit(limit).all()
         result = [{"id": s.id, "name": s.raison_sociale} for s in suppliers]
         return {"status": "success", "data": result}
+
+    def update_supplier(self, data):
+        supplier_id = data.get('supplier_id')
+        if not supplier_id and data.get('supplier_name'):
+            supplier = Supplier.query.filter(Supplier.raison_sociale.ilike(f"%{data['supplier_name']}%")).first()
+            if supplier:
+                supplier_id = supplier.id
+                
+        if not supplier_id:
+            return {"status": "error", "message": "ID ou nom du fournisseur requis pour la modification."}
+            
+        supplier = Supplier.query.get(supplier_id)
+        if not supplier:
+            return {"status": "error", "message": "Fournisseur non trouvé."}
+            
+        # Update fields if provided
+        if 'raison_sociale' in data: supplier.raison_sociale = data['raison_sociale']
+        if 'email' in data: supplier.email = data['email']
+        if 'telephone' in data: supplier.telephone = data['telephone']
+        if 'adresse' in data: supplier.adresse = data['adresse']
+        if 'ville' in data: supplier.ville = data['ville']
+        if 'code_postal' in data: supplier.code_postal = data['code_postal']
+        
+        db.session.commit()
+        return {
+            "status": "success", 
+            "message": f"Fournisseur {supplier.raison_sociale} mis à jour avec succès.",
+            "data": {"id": supplier.id, "type": "supplier", "name": supplier.raison_sociale}
+        }
 
     def _generate_document_number(self, doc_type):
         year = datetime.now().year
@@ -243,6 +306,100 @@ class ChatExecutor:
                 "document_number": doc.numero,
                 "total_ht": doc.montant_ht, 
                 "total_ttc": doc.montant_ttc,
+                "pdf_url": f"{request.host_url.rstrip('/')}{url_for('documents.view_pdf', id=doc.id)}?v={int(doc.updated_at.timestamp())}"
+            }
+        }
+
+    def delete_line(self, data):
+        """
+        Removes a line from a document by designation or index.
+        """
+        doc_number = data.get('document_number') or self.context.get('last_document_number')
+        if not doc_number:
+            return {"status": "error", "message": "Numéro du document requis pour supprimer une ligne."}
+            
+        doc = Document.query.filter_by(numero=doc_number).first()
+        if not doc:
+            return {"status": "error", "message": f"Document {doc_number} non trouvé."}
+            
+        designation = data.get('designation')
+        if not designation:
+            return {"status": "error", "message": "Désignation de la ligne requise."}
+            
+        # Find line by fuzzy designation match
+        line = next((l for l in doc.lignes if designation.lower() in l.designation.lower()), None)
+        if not line:
+            return {"status": "error", "message": f"Ligne '{designation}' non trouvée dans le document {doc_number}."}
+            
+        db.session.delete(line)
+        self._recalculate_document(doc)
+        db.session.commit()
+        
+        return {
+            "status": "success", 
+            "message": f"Ligne '{line.designation}' supprimée.",
+            "data": {
+                "id": doc.id,
+                "document_number": doc.numero,
+                "pdf_url": f"{request.host_url.rstrip('/')}{url_for('documents.view_pdf', id=doc.id)}?v={int(doc.updated_at.timestamp())}"
+            }
+        }
+
+    def update_document(self, data):
+        """
+        Updates document metadata (date, reference, status).
+        """
+        doc_number = data.get('document_number') or self.context.get('last_document_number')
+        if not doc_number:
+            return {"status": "error", "message": "Numéro du document requis pour la modification."}
+            
+        doc = Document.query.filter_by(numero=doc_number).first()
+        if not doc:
+            return {"status": "error", "message": f"Document {doc_number} non trouvé."}
+            
+        # Update fields
+        if 'date' in data:
+            try:
+                doc.date = datetime.strptime(data['date'], '%Y-%m-%d')
+            except ValueError:
+                return {"status": "error", "message": "Format de date invalide (AAAA-MM-JJ requis)."}
+                
+        if 'client_reference' in data: doc.client_reference = data['client_reference']
+        if 'chantier_reference' in data: doc.chantier_reference = data['chantier_reference']
+        if 'paid' in data: doc.paid = bool(data['paid'])
+        if 'tva_rate' in data: 
+            doc.tva_rate = float(data['tva_rate'])
+            self._recalculate_document(doc)
+            
+        db.session.commit()
+        return {
+            "status": "success", 
+            "message": f"Document {doc.numero} mis à jour.",
+            "data": {
+                "id": doc.id,
+                "document_number": doc.numero,
+                "pdf_url": f"{request.host_url.rstrip('/')}{url_for('documents.view_pdf', id=doc.id)}?v={int(doc.updated_at.timestamp())}"
+            }
+        }
+
+    def view_document(self, data):
+        """
+        Simply returns the PDF URL for a document.
+        """
+        doc_number = data.get('document_number') or self.context.get('last_document_number')
+        if not doc_number:
+            return {"status": "error", "message": "Numéro du document requis."}
+            
+        doc = Document.query.filter_by(numero=doc_number).first()
+        if not doc:
+            return {"status": "error", "message": f"Document {doc_number} non trouvé."}
+            
+        return {
+            "status": "success", 
+            "data": {
+                "id": doc.id,
+                "document_number": doc.numero,
+                "type": doc.type,
                 "pdf_url": f"{request.host_url.rstrip('/')}{url_for('documents.view_pdf', id=doc.id)}?v={int(doc.updated_at.timestamp())}"
             }
         }
