@@ -9,8 +9,8 @@ logger = logging.getLogger(__name__)
 bp = Blueprint('chat', __name__)
 
 executor = ChatExecutor()
-# AI Agent is initialized lazily or here if env var is ready
-try:
+agent = None
+
 @bp.route('/send', methods=['POST'])
 @login_required
 def send_message():
