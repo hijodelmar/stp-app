@@ -196,9 +196,12 @@ JSON RESPONSE:
 """
 
 class GoogleProvider:
-    def __init__(self, api_key, model_name=None):
+        if not api_key:
+            raise ValueError("Clé API manquante. Veuillez la configurer dans les paramètres.")
+            
         import google.generativeai as genai
-        genai.configure(api_key=api_key)
+        # Force 'rest' transport for PythonAnywhere proxy compatibility
+        genai.configure(api_key=api_key, transport='rest')
         
         # Try several names to find a working one
         models_to_try = []
