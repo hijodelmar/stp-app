@@ -16,12 +16,13 @@ def index():
     q = request.args.get('q')
     if q:
         search = f"%{q}%"
-        clients = Client.query.filter(
+        clients = Client.query.outerjoin(ClientContact).filter(
             (Client.raison_sociale.ilike(search)) | 
             (Client.ville.ilike(search)) |
             (Client.email.ilike(search)) |
+            (ClientContact.nom.ilike(search)) |
             (db.cast(Client.date_creation, db.String).ilike(search))
-        ).order_by(Client.raison_sociale).all()
+        ).distinct().order_by(Client.raison_sociale).all()
     else:
         clients = Client.query.order_by(Client.raison_sociale).all()
     return render_template('clients/index.html', clients=clients)

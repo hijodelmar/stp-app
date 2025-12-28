@@ -11,8 +11,9 @@
 <div class="card mb-4">
     <div class="card-body">
         <form action="{{ url_for('clients.index') }}" method="GET" class="d-flex">
-            <input class="form-control me-2" type="search" name="q" placeholder="Rechercher (Nom, Ville, Email)"
-                aria-label="Search" value="{{ request.args.get('q', '') }}">
+            <input class="form-control me-2" type="search" name="q"
+                placeholder="Rechercher (Nom, Ville, Email, Contact)" aria-label="Search"
+                value="{{ request.args.get('q', '') }}">
             <button class="btn btn-outline-primary" type="submit">Rechercher</button>
             {% if request.args.get('q') %}
             <a href="{{ url_for('clients.index') }}" class="btn btn-outline-secondary ms-2" title="Effacer"><i
@@ -29,7 +30,7 @@
             <table class="table table-hover">
                 <thead>
                     <tr>
-                        <th>Raison Sociale</th>
+                        <th>Raison Sociale / Contacts</th>
                         <th>Ville</th>
                         <th>Contact</th>
                         <th>Historique</th>
@@ -39,7 +40,19 @@
                 <tbody>
                     {% for client in clients %}
                     <tr>
-                        <td>{{ client.raison_sociale }}</td>
+                        <td>
+                            <div class="fw-bold">{{ client.raison_sociale }}</div>
+                            {% if client.contacts %}
+                            <div class="mt-1">
+                                {% for contact in client.contacts %}
+                                <span class="badge bg-light text-dark border me-1"
+                                    title="{{ contact.fonction or 'Contact' }}">
+                                    <i class="fas fa-user-tie small text-muted me-1"></i>{{ contact.nom }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </td>
                         <td>{{ client.ville }}</td>
                         <td>
                             <small class="d-block">{{ client.telephone or '-' }}</small>
