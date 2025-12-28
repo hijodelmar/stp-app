@@ -23,8 +23,9 @@ def send_message():
             agent.refresh_settings()
 
         if not agent or not agent.provider:
+            error_msg = agent.last_error if agent else "Erreur système : agent non initialisé."
             return jsonify({
-                "reply": "L'assistant IA est actuellement désactivé ou non configuré.",
+                "reply": f"L'assistant IA n'est pas prêt : {error_msg}",
                 "status": "disabled"
             })
             

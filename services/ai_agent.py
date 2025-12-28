@@ -7,28 +7,43 @@ class AIAgent:
     def __init__(self):
         self.settings = None
         self.provider = None
+        self.last_error = None
         self.refresh_settings()
 
     def refresh_settings(self):
         """Reload settings from DB and re-initialize provider."""
         from extensions import db
         try:
+            # Force refresh to ensure we have latest data on PA
+            db.session.expire_all()
             self.settings = AISettings.get_settings()
-            if not self.settings.enabled:
+            
+            if not self.settings or not self.settings.enabled:
                 self.provider = None
+                self.last_error = "L'assistant IA est désactivé dans les paramètres."
+                return
+
+            api_key = (self.settings.api_key or "").strip()
+            if not api_key:
+                self.provider = None
+                self.last_error = "Clé API manquante dans les paramètres."
                 return
 
             if self.settings.provider == 'google':
-                self.provider = GoogleProvider(self.settings.api_key, self.settings.model_name)
+                self.provider = GoogleProvider(api_key, self.settings.model_name)
+                self.last_error = None
             elif self.settings.provider == 'openai':
-                self.provider = OpenAIProvider(self.settings.api_key, self.settings.model_name)
+                self.provider = OpenAIProvider(api_key, self.settings.model_name)
+                self.last_error = None
         except Exception as e:
-            print(f"AI Agent: Error loading settings: {e}")
+            err_msg = f"Erreur d'initialisation : {str(e)}"
+            print(f"AI Agent: {err_msg}")
+            self.last_error = err_msg
             self.provider = None
 
     def generate_response(self, user_input, context=None, external_activity=None):
         if not self.provider:
-            return {"action": "error", "reply": "Assistant désactivé ou erreur de configuration."}
+            return {"action": "error", "reply": self.last_error or "Assistant non configuré."}
             
         prompt = self._build_system_prompt(user_input, context, external_activity)
         
