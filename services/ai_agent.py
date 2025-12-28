@@ -196,6 +196,7 @@ JSON RESPONSE:
 """
 
 class GoogleProvider:
+    def __init__(self, api_key, model_name=None):
         if not api_key:
             raise ValueError("Clé API manquante. Veuillez la configurer dans les paramètres.")
             
