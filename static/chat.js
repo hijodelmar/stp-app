@@ -80,7 +80,12 @@ document.addEventListener('DOMContentLoaded', () => {
         messagesContainer.innerHTML = '<div class="message bot">Historique effacé. Bonjour! Je suis prêt pour une nouvelle session.</div>';
 
         try {
-            await fetch('/api/chat/reset', { method: 'POST' });
+            await fetch('/api/chat/reset', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            });
         } catch (e) {
             console.error("Error resetting chat session:", e);
         }
@@ -124,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 },
                 body: JSON.stringify({ message: text }),
             });
