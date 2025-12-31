@@ -22,9 +22,9 @@ def index():
             (Client.email.ilike(search)) |
             (ClientContact.nom.ilike(search)) |
             (db.cast(Client.date_creation, db.String).ilike(search))
-        ).distinct().order_by(Client.raison_sociale).all()
+        ).distinct().order_by(Client.raison_sociale.asc()).all()
     else:
-        clients = Client.query.order_by(Client.raison_sociale).all()
+        clients = Client.query.order_by(Client.raison_sociale.asc()).all()
     return render_template('clients/index.html', clients=clients)
 
 @bp.route('/add', methods=['GET', 'POST'])

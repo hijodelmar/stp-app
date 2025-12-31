@@ -19,9 +19,9 @@ def index():
             (Supplier.raison_sociale.ilike(search)) |
             (Supplier.ville.ilike(search)) |
             (Supplier.email.ilike(search))
-        ).order_by(Supplier.raison_sociale).all()
+        ).order_by(Supplier.raison_sociale.asc()).all()
     else:
-        suppliers = Supplier.query.order_by(Supplier.raison_sociale).all()
+        suppliers = Supplier.query.order_by(Supplier.raison_sociale.asc()).all()
     return render_template('fournisseurs/index.html', suppliers=suppliers)
 
 @bp.route('/add', methods=['GET', 'POST'])

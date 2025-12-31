@@ -59,6 +59,7 @@
                             <form action="{{ url_for('fournisseurs.delete', id=supplier.id) }}" method="POST"
                                 class="d-inline"
                                 onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce fournisseur ?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                 <button type="submit" class="btn btn-sm btn-outline-danger"><i
                                         class="fas fa-trash"></i></button>
                             </form>

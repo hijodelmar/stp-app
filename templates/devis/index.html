@@ -42,6 +42,24 @@
                     <tr>
                         <td>
                             <strong class="text-primary">{{ doc.numero }}</strong>
+
+                            {% set invoices = doc.generated_documents|selectattr("type", "equalto",
+                            "facture")|list|sort(attribute='created_at', reverse=True) %}
+                            {% set latest_inv = invoices[0] if invoices else None %}
+
+                            {% if latest_inv %}
+                            {% if doc.updated_at > latest_inv.created_at %}
+                            <span class="badge bg-warning text-dark ms-1"
+                                title="Le devis a été modifié après la création de la facture {{ latest_inv.numero }}">
+                                <i class="fas fa-exclamation-triangle"></i> Mis à jour
+                            </span>
+                            {% else %}
+                            <span class="badge bg-success ms-1" title="Facture associée: {{ latest_inv.numero }}">
+                                <i class="fas fa-check-circle"></i> FACTURÉ
+                            </span>
+                            {% endif %}
+                            {% endif %}
+
                             {% if doc.sent_at %}
                             <i class="fas fa-envelope-circle-check text-success ms-1"
                                 title="Envoyé par email le {{ doc.sent_at.strftime('%d/%m/%Y à %H:%M') }}"></i>
@@ -72,6 +90,7 @@
                             {% if doc.cc_contacts and current_user.has_any_role(['admin', 'manager', 'devis_admin']) %}
                             <form action="{{ url_for('mail.send_document', id=doc.id) }}" method="POST" class="d-inline"
                                 onsubmit="return confirm('Envoyer ce devis par email aux destinataires sélectionnés ?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                 <button type="submit" class="btn btn-sm btn-outline-dark me-1"
                                     title="Envoyer par email">
                                     <i class="fas fa-envelope"></i>
@@ -80,31 +99,35 @@
                             {% endif %}
 
                             {% if current_user.has_any_role(['admin', 'manager', 'devis_admin']) %}
+                            <!-- Duplication -->
+                            <form action="{{ url_for('devis.duplicate', id=doc.id) }}" method="POST" class="d-inline"
+                                onsubmit="return confirm('Voulez-vous créer une copie de ce devis ?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                <button type="submit" class="btn btn-sm btn-outline-info me-1" title="Dupliquer">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </form>
+
                             <a href="{{ url_for('devis.edit', id=doc.id) }}" class="btn btn-sm btn-outline-primary me-1"
                                 title="Modifier"><i class="fas fa-edit"></i></a>
 
-                            {% set linked_invoice = None %}
-                            {% for gen_doc in doc.generated_documents %}
-                            {% if gen_doc.type == 'facture' %}
-                            {% set linked_invoice = gen_doc %}
-                            {% endif %}
-                            {% endfor %}
+                            {% set invoices = doc.generated_documents|selectattr("type", "equalto",
+                            "facture")|list|sort(attribute='created_at', reverse=True) %}
+                            {% set latest_inv = invoices[0] if invoices else None %}
 
-                            {% if linked_invoice %}
-                            <span class="badge bg-success" title="Facture associée">
-                                <i class="fas fa-check-circle"></i> F: {{ linked_invoice.numero }}
-                            </span>
-                            {% else %}
+                            {% if not latest_inv or doc.updated_at > latest_inv.created_at %}
                             <!-- BOUTON CONVERSION MODAL -->
                             <button type="button" class="btn btn-sm btn-outline-success me-1" data-bs-toggle="modal"
                                 data-bs-target="#convertModal" data-devis-id="{{ doc.id }}"
-                                data-devis-numero="{{ doc.numero }}" title="Convertir en Facture">
+                                data-devis-numero="{{ doc.numero }}"
+                                title="{{ 'Mettre à jour la facture' if latest_inv else 'Convertir en Facture' }}">
                                 <i class="fas fa-magic"></i>
                             </button>
                             {% endif %}
 
                             <form action="{{ url_for('devis.delete', id=doc.id) }}" method="POST" class="d-inline"
                                 onsubmit="return confirm('Supprimer ce devis ?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                 <button type="submit" class="btn btn-sm btn-outline-danger"><i
                                         class="fas fa-trash"></i></button>
                             </form>
@@ -132,8 +155,17 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="convertForm" action="" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <div class="modal-body">
                     <p>Vous êtes sur le point de convertir le devis <strong id="modalDevisNum"></strong> en facture.</p>
+
+                    <div class="alert alert-warning py-2 small">
+                        <i class="fas fa-info-circle me-1"></i>
+                        <strong>Attention:</strong> Si une facture existe déjà pour ce devis, elle sera
+                        <strong>automatiquement supprimée</strong> y compris son fichier PDF, y pour être remplacée par
+                        cette nouvelle version.
+                    </div>
+
                     <div class="mb-3">
                         <label for="client_reference" class="form-label">Référence Client <span
                                 class="text-danger">*</span></label>

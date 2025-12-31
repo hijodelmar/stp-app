@@ -40,12 +40,13 @@
     <div class="col-12">
         <div class="d-flex flex-wrap gap-3">
             <a href="{{ url_for('clients.add') }}"
-                class="btn px-4 py-2 shadow-sm d-flex align-items-center gap-2 fw-bold"
-                style="background-color: #002366; color: white; border: 2px solid #002366; border-radius: 8px; transition: all 0.3s ease;">
+                class="btn px-4 py-2 shadow-sm d-flex align-items-center gap-2 fw-bold dash-btn-animate"
+                style="background-color: #002366; color: white; border: 2px solid #002366; border-radius: 8px;">
                 <i class="fas fa-user-plus"></i> Nouveau Client
             </a>
-            <a href="{{ url_for('devis.add') }}" class="btn px-4 py-2 shadow-sm d-flex align-items-center gap-2 fw-bold"
-                style="background-color: #D4AF37; color: #002366; border: 2px solid #D4AF37; border-radius: 8px; transition: all 0.3s ease;">
+            <a href="{{ url_for('devis.add') }}"
+                class="btn px-4 py-2 shadow-sm d-flex align-items-center gap-2 fw-bold dash-btn-animate pulse-subtle"
+                style="background-color: #D4AF37; color: #002366; border: 2px solid #D4AF37; border-radius: 8px;">
                 <i class="fas fa-file-invoice"></i> Créer un Devis
             </a>
         </div>
@@ -55,16 +56,51 @@
 <!-- KPI Cards -->
 <div class="row g-3 mb-4">
     <div class="col-md-3">
-        <div class="card border-0 shadow-sm h-100">
+        <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #002366 !important;">
             <div class="card-body">
                 <div class="d-flex align-items-center mb-2">
-                    <div class="flex-shrink-0 p-2 rounded" style="background-color: #f8f9fa; color: #6c757d;">
+                    <div class="flex-shrink-0 p-2 rounded"
+                        style="background-color: rgba(0, 35, 102, 0.1); color: #002366;">
                         <i class="fas fa-euro-sign fa-lg"></i>
                     </div>
                     <div class="ms-3">
                         <small class="text-muted d-block">Chiffre d'Affaires HT</small>
                         <h4 class="mb-0 fw-bold"><span class="privacy-value">{{ "%.2f"|format(stats.total_ht) }}
                                 €</span></h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #f44336 !important;">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="flex-shrink-0 p-2 rounded"
+                        style="background-color: rgba(244, 67, 54, 0.1); color: #f44336;">
+                        <i class="fas fa-shopping-cart fa-lg"></i>
+                    </div>
+                    <div class="ms-3">
+                        <small class="text-muted d-block">Total Dépenses HT</small>
+                        <h4 class="mb-0 fw-bold" style="color: #f44336;"><span class="privacy-value">{{
+                                "%.2f"|format(stats.total_depenses) }} €</span></h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #10b981 !important;">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="flex-shrink-0 p-2 rounded"
+                        style="background-color: rgba(16, 185, 129, 0.1); color: #10b981;">
+                        <i class="fas fa-chart-pie fa-lg"></i>
+                    </div>
+                    <div class="ms-3">
+                        <small class="text-muted d-block">Bénéfice Net HT</small>
+                        <h4 class="mb-0 fw-bold" style="color: #10b981;"><span class="privacy-value">{{
+                                "%.2f"|format(stats.benefice_net) }} €</span></h4>
                     </div>
                 </div>
             </div>
@@ -167,7 +203,7 @@
     <div class="col-lg-8">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-header bg-white border-0 py-3">
-                <h5 class="mb-0 fw-bold">Évolution du CA HT</h5>
+                <h5 class="mb-0 fw-bold">Évolution Financière (HT)</h5>
             </div>
             <div class="card-body">
                 <canvas id="caChart" height="250"></canvas>
@@ -227,24 +263,35 @@
         data: {
             labels: {{ stats.monthly_labels | tojson }},
         datasets: [{
-            label: 'Chiffre d\'Affaires HT (€)',
+            label: 'Chiffre d\'Affaires (€)',
             data: {{ stats.monthly_data | tojson }},
         borderColor: '#002366',
         backgroundColor: 'rgba(0, 35, 102, 0.05)',
         fill: true,
         tension: 0.3,
         borderWidth: 3,
-        pointRadius: 5,
-        pointBackgroundColor: '#D4AF37',
-        pointBorderColor: '#002366',
-        pointBorderWidth: 2
+        pointRadius: 4
+            }, {
+            label: 'Dépenses (€)',
+            data: {{ stats.monthly_expense_data | tojson }},
+        borderColor: '#f44336',
+        backgroundColor: 'rgba(244, 67, 54, 0.05)',
+        fill: true,
+        tension: 0.3,
+        borderWidth: 2,
+        pointRadius: 4,
+        borderDash: [5, 5]
             }]
         },
         options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-            legend: { display: false }
+            legend: {
+                display: true,
+                position: 'top',
+                labels: { usePointStyle: true, padding: 20 }
+            }
         },
         scales: {
             y: {
@@ -297,7 +344,7 @@
         borderWidth: 1,
         borderRadius: 5,
         hoverBackgroundColor: '#D4AF37'
-    }]
+            }]
         },
         options: {
         indexAxis: 'y',

@@ -21,9 +21,9 @@ def index():
             ((Document.numero.ilike(search)) |
             (Supplier.raison_sociale.ilike(search)) |
             (db.cast(Document.date, db.String).ilike(search)))
-        ).order_by(Document.date.desc()).all()
+        ).order_by(Document.updated_at.desc()).all()
     else:
-        documents = Document.query.filter_by(type='bon_de_commande').order_by(Document.date.desc()).all()
+        documents = Document.query.filter_by(type='bon_de_commande').order_by(Document.updated_at.desc()).all()
     return render_template('bons_commande/index.html', documents=documents)
 
 @bp.route('/add', methods=['GET', 'POST'])

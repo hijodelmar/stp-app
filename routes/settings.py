@@ -63,6 +63,8 @@ def template_editor():
     return render_template('template_editor.html', content=content)
 
 @bp.route('/template_preview', methods=['POST'])
+@login_required
+@role_required(['admin', 'settings'])
 def template_preview():
     html_content = request.form.get('content')
     from services.mock_data import get_mock_document
@@ -75,6 +77,8 @@ def template_preview():
         return f"<div style='color:red;'><h2>Erreur</h2><pre>{str(e)}</pre></div>"
 
 @bp.route('/save_template', methods=['POST'])
+@login_required
+@role_required(['admin', 'settings'])
 def save_template():
     content = request.form.get('content')
     if not content:

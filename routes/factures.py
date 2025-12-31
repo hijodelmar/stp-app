@@ -6,6 +6,7 @@ from models import Document, LigneDocument, Client, CompanyInfo, ClientContact
 from forms import DocumentForm
 from flask_login import login_required, current_user
 from utils.auth import role_required
+from utils.document import generate_document_number
 
 bp = Blueprint('factures', __name__)
 
@@ -15,15 +16,18 @@ bp = Blueprint('factures', __name__)
 def index():
     q = request.args.get('q')
     if q:
+        from sqlalchemy.orm import aliased
+        SourceDocument = aliased(Document)
         search = f"%{q}%"
-        documents = Document.query.join(Client).filter(
+        documents = Document.query.join(Client).outerjoin(SourceDocument, Document.source_document_id == SourceDocument.id).filter(
             (Document.type == 'facture') &
             ((Document.numero.ilike(search)) |
             (Client.raison_sociale.ilike(search)) |
+            (SourceDocument.numero.ilike(search)) |
             (db.cast(Document.date, db.String).ilike(search)))
-        ).order_by(Document.date.desc()).all()
+        ).order_by(Document.updated_at.desc()).all()
     else:
-        documents = Document.query.filter_by(type='facture').order_by(Document.date.desc()).all()
+        documents = Document.query.filter_by(type='facture').order_by(Document.updated_at.desc()).all()
     return render_template('factures/index.html', documents=documents)
 
 @bp.route('/add', methods=['GET', 'POST'])
@@ -39,8 +43,7 @@ def add():
             return render_template('factures/form.html', form=form, title="Nouvelle Facture")
 
         year = datetime.now().year
-        count = Document.query.filter(Document.numero.like(f'F-{year}-%')).count()
-        numero = f'F-{year}-{count + 1:04d}'
+        numero = generate_document_number('F', year)
 
         document = Document(
             type='facture',
@@ -271,11 +274,18 @@ def convert_from_devis(id):
          flash('Document non valide pour conversion.', 'danger')
          return redirect(url_for('devis.index'))
     
-    # Check if an invoice already exists for this devis
-    existing_facture = Document.query.filter_by(type='facture', source_document_id=id).first()
-    if existing_facture:
-        flash(f'Ce devis a déjà été converti en facture (N° {existing_facture.numero}).', 'warning')
-        return redirect(url_for('devis.index'))
+    # Smart Regeneration Logic:
+    # Check if an invoice already exists and if the Devis has been modified since then
+    latest_facture = Document.query.filter_by(type='facture', source_document_id=id).order_by(Document.created_at.desc()).first()
+    
+    if latest_facture:
+        # If the Devis hasn't been modified since the latest invoice, block regeneration
+        if devis.updated_at <= latest_facture.created_at:
+            flash(f'Ce devis a déjà été converti en facture (N° {latest_facture.numero}). Modifiez le devis pour pouvoir générer une nouvelle facture.', 'warning')
+            return redirect(url_for('devis.index'))
+        else:
+            if request.method == 'GET':
+                 flash(f'Note: Une facture existe déjà (N° {latest_facture.numero}), mais le devis a été modifié depuis. Vous générez une nouvelle version.', 'info')
     
     if request.method == 'GET':
         # Show form to enter client reference
@@ -290,6 +300,21 @@ def convert_from_devis(id):
     if not client_reference:
         flash('La référence client est obligatoire pour générer une facture.', 'danger')
         return redirect(url_for('factures.convert_from_devis', id=id))
+         
+    # --- NEW: Cleanup old invoices to avoid duplicates ---
+    old_invoices = Document.query.filter_by(type='facture', source_document_id=id).all()
+    if old_invoices:
+        import os
+        for old_inv in old_invoices:
+            # Delete associated PDF file if it exists
+            if old_inv.pdf_path and os.path.exists(old_inv.pdf_path):
+                try:
+                    os.remove(old_inv.pdf_path)
+                except Exception as e:
+                    print(f"Could not delete old PDF {old_inv.pdf_path}: {e}")
+            db.session.delete(old_inv)
+        db.session.commit()
+    # ---------------------------------------------------
          
     year = datetime.now().year
     count = Document.query.filter(Document.numero.like(f'F-{year}-%')).count()

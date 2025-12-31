@@ -1,8 +1,10 @@
 /* Theme Variables */
 :root {
     /* Default Theme (Blue/Gold) */
-    --primary-color: #002366; /* Navy Blue */
-    --secondary-color: #D4AF37; /* Gold */
+    --primary-color: #002366;
+    /* Navy Blue */
+    --secondary-color: #D4AF37;
+    /* Gold */
     --navbar-bg: linear-gradient(to right, #005c97, #363795);
     --bg-color: #f8f9fa;
     --text-color: #333;
@@ -11,6 +13,11 @@
     --info-bg: #e3f2fd;
     --success-bg: #e8f5e9;
     --warning-bg: #fff9c4;
+
+    /* New Shadows and Effects from Overhaul (Kept as requested) */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
 [data-theme="dark"] {
@@ -27,44 +34,233 @@
     --warning-bg: #2c2c00;
 }
 
-[data-theme="ocean"] {
-    /* Ocean Theme */
-    --primary-color: #006064; /* Cyan 900 */
-    --secondary-color: #00bcd4; /* Cyan */
-    --navbar-bg: linear-gradient(to right, #00838f, #00acc1);
-    --bg-color: #e0f7fa;
-    --text-color: #004d40;
-    --card-bg: #ffffff;
-    --border-color: #b2ebf2;
-    --info-bg: #e0f7fa;
-    --success-bg: #e0f2f1;
-    --warning-bg: #fffde7;
-}
-
 /* Base Styles */
 body {
+    font-family: 'Outfit', sans-serif;
     background-color: var(--bg-color);
     color: var(--text-color);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    animation: fadeIn 0.6s ease-out;
+    /* Kept Animation */
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Custom styles */
-.cursor-pointer {
-    cursor: pointer;
-}
-
 /* Privacy Mode Utilities */
 .privacy-value {
-    transition: filter 0.3s ease, opacity 0.3s ease;
+    transition: filter 0.3s ease;
 }
 
+/* Dashboard Button Animations */
+.dash-btn-animate {
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}
+
+.dash-btn-animate:hover {
+    transform: translateY(-4px) scale(1.03);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15) !important;
+}
+
+.dash-btn-animate:active {
+    transform: translateY(-2px) scale(0.98);
+}
+
+.dash-btn-animate i {
+    transition: transform 0.3s ease;
+}
+
+.dash-btn-animate:hover i {
+    transform: rotate(15deg) scale(1.2);
+}
+
+@keyframes slow-pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    50% {
+        transform: scale(1.02);
+        box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    100% {
+        transform: scale(1);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+}
+
+.pulse-subtle {
+    animation: slow-pulse 3s infinite ease-in-out;
+}
+
+/* Login Page Special Styles */
+.login-body {
+    background: linear-gradient(-45deg, #001a4d, #002366, #003399, #001a4d);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@keyframes gradientBG {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+.login-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    box-shadow: var(--shadow-lg);
+    animation: slideUpFade 0.8s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+@keyframes slideUpFade {
+    0% {
+        opacity: 0;
+        transform: translateY(40px) scale(0.95);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.login-icon-circle {
+    width: 80px;
+    height: 80px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: -40px auto 20px;
+    box-shadow: var(--shadow-md);
+    border: 3px solid #002366;
+    animation: iconBounce 1s 0.5s both;
+}
+
+@keyframes iconBounce {
+
+    0%,
+    20%,
+    50%,
+    80%,
+    100% {
+        transform: translateY(0);
+    }
+
+    40% {
+        transform: translateY(-20px);
+    }
+
+    60% {
+        transform: translateY(-10px);
+    }
+}
+
+.input-icon-group {
+    position: relative;
+}
+
+.input-icon-group i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #adb5bd;
+    transition: color 0.3s ease;
+}
+
+.input-icon-group .form-control {
+    padding-left: 45px;
+    height: 50px;
+    border-radius: 10px;
+    border: 2px solid #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.input-icon-group .form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: none;
+}
+
+.input-icon-group .form-control:focus+i {
+    color: var(--primary-color);
+}
+
+.login-btn {
+    height: 50px;
+    border-radius: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    position: relative;
+}
+
+.login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 35, 102, 0.3);
+}
+
+/* Privacy Mode Overlay */
 .privacy-active .privacy-value {
     filter: blur(8px);
-    opacity: 0.7;
-    user-select: none;
     pointer-events: none;
+    user-select: none;
+    opacity: 0.7;
+    /* Retained from original, not in snippet but makes sense */
+}
+
+/* Icon Picker Styles */
+.icon-item {
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-item:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-sm);
+    border-color: var(--primary-color) !important;
+    color: var(--primary-color);
+}
+
+.cursor-pointer {
+    cursor: pointer;
 }
 
 .privacy-toggle {
@@ -83,6 +279,8 @@ body {
 /* Navbar */
 .navbar {
     background: var(--navbar-bg) !important;
+    box-shadow: var(--shadow-md);
+    /* Kept Shadow */
 }
 
 .navbar-dark .navbar-brand {
@@ -93,10 +291,10 @@ body {
     color: rgba(255, 255, 255, 0.75) !important;
 }
 
-.navbar-dark .nav-link:hover, .navbar-dark .nav-link:focus {
+.navbar-dark .nav-link:hover,
+.navbar-dark .nav-link:focus {
     color: #fff !important;
 }
-
 
 /* Navbar Animations */
 .navbar-brand {
@@ -121,40 +319,28 @@ body {
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-.nav-link::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    width: 0;
-    height: 2px;
-    background-color: #fff;
-    transition: all 0.3s ease;
-    transform: translateX(-50%);
-}
-
-.nav-link:hover::after {
-    width: 80%;
-}
-
-/* Card Styles for Dark Mode Support */
+/* Card Styles with New Shadows */
 .card {
     background-color: var(--card-bg);
     border-color: var(--border-color) !important;
     color: var(--text-color);
+    box-shadow: var(--shadow-md);
+    /* Added unified shadows */
+    border-radius: 12px;
+    /* Smoother corners */
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Ensure form inputs look okay in dark mode (simple fix) */
-[data-theme="dark"] .form-control, 
+.card:hover {
+    box-shadow: var(--shadow-lg);
+}
+
+/* Ensure form inputs look okay in dark mode */
+[data-theme="dark"] .form-control,
 [data-theme="dark"] .form-select {
     background-color: #2b2b2b;
     border-color: #444;
     color: #ccc;
-}
-[data-theme="dark"] .form-control:focus,
-[data-theme="dark"] .form-select:focus {
-    background-color: #333;
-    color: #fff;
 }
 
 [data-theme="dark"] .table {

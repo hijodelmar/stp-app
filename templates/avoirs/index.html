@@ -84,6 +84,7 @@
                             {% if doc.cc_contacts and current_user.has_any_role(['admin', 'manager', 'avoir_admin']) %}
                             <form action="{{ url_for('mail.send_document', id=doc.id) }}" method="POST" class="d-inline"
                                 onsubmit="return confirm('Envoyer cet avoir par email aux destinataires sélectionnés ?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                 <button type="submit" class="btn btn-sm btn-outline-dark me-1"
                                     title="Envoyer par email">
                                     <i class="fas fa-envelope"></i>
@@ -96,6 +97,7 @@
                                     class="fas fa-edit"></i></a>
                             <form action="{{ url_for('avoirs.delete', id=doc.id) }}" method="POST" class="d-inline"
                                 onsubmit="return confirm('Supprimer cet avoir ?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer"><i
                                         class="fas fa-trash"></i></button>
                             </form>

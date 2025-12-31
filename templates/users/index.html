@@ -50,6 +50,7 @@
                         {% if user.id != current_user.id %}
                         <form action="{{ url_for('users.delete', id=user.id) }}" method="POST" class="d-inline"
                             onsubmit="return confirm('Supprimer cet utilisateur ?')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                             <button type="submit" class="btn btn-sm btn-outline-danger">
                                 <i class="fas fa-trash"></i>
                             </button>

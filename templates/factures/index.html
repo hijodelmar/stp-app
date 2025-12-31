@@ -15,8 +15,9 @@
 <div class="card mb-4">
     <div class="card-body">
         <form action="{{ url_for('factures.index') }}" method="GET" class="d-flex">
-            <input class="form-control me-2" type="search" name="q" placeholder="Rechercher (Numéro, Client)"
-                aria-label="Search" value="{{ request.args.get('q', '') }}">
+            <input class="form-control me-2" type="search" name="q"
+                placeholder="Rechercher (N° Facture, N° Devis, Client)" aria-label="Search"
+                value="{{ request.args.get('q', '') }}">
             <button class="btn btn-outline-primary" type="submit">Rechercher</button>
             {% if request.args.get('q') %}
             <a href="{{ url_for('factures.index') }}" class="btn btn-outline-secondary ms-2" title="Effacer"><i
@@ -119,6 +120,7 @@
                             %}
                             <form action="{{ url_for('mail.send_document', id=doc.id) }}" method="POST" class="d-inline"
                                 onsubmit="return confirm('Envoyer cette facture par email aux destinataires sélectionnés ?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                 <button type="submit" class="btn btn-sm btn-outline-dark me-1"
                                     title="Envoyer par email">
                                     <i class="fas fa-envelope"></i>
@@ -131,6 +133,7 @@
                                     class="fas fa-edit"></i></a>
                             <form action="{{ url_for('factures.delete', id=doc.id) }}" method="POST" class="d-inline"
                                 onsubmit="return confirm('Supprimer cette facture ?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer"><i
                                         class="fas fa-trash"></i></button>
                             </form>

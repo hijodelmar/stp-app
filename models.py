@@ -211,6 +211,7 @@ class CompanyInfo(db.Model):
     
     # Theme settings
     theme = db.Column(db.String(50), default='default')
+    brand_icon = db.Column(db.String(50), default='fas fa-tools')
 
 class AISettings(db.Model):
     id = db.Column(db.Integer, primary_key=True)

@@ -19,6 +19,7 @@
                     </p>
                 </div>
                 <form action="{{ url_for('auth.force_login') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                     <div class="d-grid gap-3">
                         <button type="submit" class="btn btn-primary btn-lg rounded-pill fw-bold shadow-sm">
                             <i class="fas fa-sign-in-alt me-2"></i> Oui, forcer la connexion

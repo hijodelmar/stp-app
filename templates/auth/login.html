@@ -1,26 +1,68 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="row justify-content-center mt-5">
-    <div class="col-md-4">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white text-center py-3">
-                <h4 class="mb-0">Connexion</h4>
-            </div>
-            <div class="card-body p-4">
-                <form method="POST">
-                    <div class="mb-3">
-                        <label for="username" class="form-label">Identifiant</label>
-                        <input type="text" class="form-control" id="username" name="username" required autofocus>
+<style>
+    /* Force specific background for login to stay consistent with animated gradient */
+    body {
+        background: transparent !important;
+    }
+
+    .navbar,
+    footer {
+        display: none !important;
+    }
+</style>
+
+<div class="login-body vw-100 vh-100 position-fixed top-0 start-0">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-5 col-lg-4">
+
+                <div class="text-center mb-5 fade-in-down" style="animation: slideUpFade 0.6s 0.2s both;">
+                    <h2 class="text-white fw-bold mb-0">STP GESTION</h2>
+                    <p class="text-white-50 small">Service Température Plomberie</p>
+                </div>
+
+                <div class="card login-card border-0">
+                    <div class="login-icon-circle">
+                        <i class="{{ company_info.brand_icon or 'fas fa-tools' }} fa-2x text-primary"></i>
                     </div>
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Mot de passe</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
+
+                    <div class="card-body p-4 p-lg-5 pt-0">
+                        <h4 class="text-center mb-4 fw-bold text-dark">Bon retour !</h4>
+
+                        <form method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                            <div class="mb-4">
+                                <label for="username" class="form-label small fw-bold text-muted">IDENTIFIANT</label>
+                                <div class="input-icon-group">
+                                    <input type="text" class="form-control" id="username" name="username" required
+                                        autofocus placeholder="Votre identifiant">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="password" class="form-label small fw-bold text-muted">MOT DE PASSE</label>
+                                <div class="input-icon-group">
+                                    <input type="password" class="form-control" id="password" name="password" required
+                                        placeholder="••••••••">
+                                    <i class="fas fa-lock"></i>
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2 mt-5">
+                                <button type="submit" class="btn btn-primary btn-lg login-btn">
+                                    Se connecter <i class="fas fa-arrow-right ms-2 small"></i>
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                    <div class="d-grid gap-2 mt-4">
-                        <button type="submit" class="btn btn-primary btn-lg">Se connecter</button>
-                    </div>
-                </form>
+                </div>
+
+                <div class="text-center mt-4 text-white-50 small" style="animation: slideUpFade 0.8s 0.8s both;">
+                    &copy; {{ now.year if now else '2025' }} STP Gestion. Tous droits réservés.
+                </div>
             </div>
         </div>
     </div>

@@ -6,6 +6,7 @@ from models import Document, LigneDocument, Client, CompanyInfo, ClientContact
 from forms import DocumentForm
 from flask_login import login_required, current_user
 from utils.auth import role_required
+from utils.document import generate_document_number
 
 bp = Blueprint('avoirs', __name__)
 
@@ -21,9 +22,9 @@ def index():
             ((Document.numero.ilike(search)) |
             (Client.raison_sociale.ilike(search)) |
             (db.cast(Document.date, db.String).ilike(search)))
-        ).order_by(Document.date.desc()).all()
+        ).order_by(Document.updated_at.desc()).all()
     else:
-        documents = Document.query.filter_by(type='avoir').order_by(Document.date.desc()).all()
+        documents = Document.query.filter_by(type='avoir').order_by(Document.updated_at.desc()).all()
     return render_template('avoirs/index.html', documents=documents)
 
 @bp.route('/add', methods=['GET', 'POST'])
@@ -36,8 +37,7 @@ def add():
 
     if form.validate_on_submit():
         year = datetime.now().year
-        count = Document.query.filter(Document.numero.like(f'A-{year}-%')).count()
-        numero = f'A-{year}-{count + 1:04d}'
+        numero = generate_document_number('A', year)
 
         document = Document(
             type='avoir',

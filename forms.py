@@ -101,5 +101,6 @@ class CompanyInfoForm(FlaskForm):
         ('dark', 'Mode Sombre / Nuit'),
         ('ocean', 'Océan (Teintes Cyan/Bleu)')
     ], default='default')
+    brand_icon = StringField('Icône de la barre de navigation', default='fas fa-tools')
     
     submit = SubmitField('Enregistrer')

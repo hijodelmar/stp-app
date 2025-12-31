@@ -6,6 +6,7 @@ from models import Document, LigneDocument, Client, CompanyInfo, ClientContact
 from forms import DocumentForm
 from flask_login import login_required, current_user
 from utils.auth import role_required
+from utils.document import generate_document_number
 
 bp = Blueprint('devis', __name__)
 
@@ -21,84 +22,9 @@ def index():
             ((Document.numero.ilike(search)) |
             (Client.raison_sociale.ilike(search)) |
             (db.cast(Document.date, db.String).ilike(search)))
-        ).order_by(Document.date.desc()).all()
+        ).order_by(Document.updated_at.desc()).all()
     else:
-        documents = Document.query.filter_by(type='devis').order_by(Document.date.desc()).all()
-    return render_template('devis/index.html', documents=documents)
-
-@bp.route('/add', methods=['GET', 'POST'])
-@login_required
-@role_required(['admin', 'manager', 'devis_admin'])
-def add():
-    # ...
-    if form.validate_on_submit():
-        # ...
-        document = Document(
-            type='devis',
-            numero=numero,
-            date=datetime.strptime(form.date.data, '%Y-%m-%d'),
-            client_id=form.client_id.data,
-            # Contacts (Manual handling for dynamic fields)
-            contact_id=form.contact_id.data if form.contact_id.data else None,
-            autoliquidation=form.autoliquidation.data,
-            # ...
-        )
-
-        # Handle CC Contacts
-        if form.cc_contacts.data:
-            # Filter empty strings match IDs
-            cc_ids = [int(id) for id in form.cc_contacts.data if id]
-            if cc_ids:
-                contacts = ClientContact.query.filter(ClientContact.id.in_(cc_ids)).all()
-                document.cc_contacts = contacts
-        
-        # ...
-
-@bp.route('/edit/<int:id>', methods=['GET', 'POST'])
-@login_required
-@role_required(['admin', 'manager', 'devis_admin'])
-def edit(id):
-    # ...
-    if form.validate_on_submit():
-        # ...
-        document.client_id = form.client_id.data
-        if form.contact_id.data:
-            document.contact_id = form.contact_id.data
-        else:
-            document.contact_id = None
-            
-        # Handle CC Contacts (Update relation)
-        if form.cc_contacts.data:
-             cc_ids = [int(id) for id in form.cc_contacts.data if id]
-             if cc_ids:
-                 contacts = ClientContact.query.filter(ClientContact.id.in_(cc_ids)).all()
-                 document.cc_contacts = contacts
-             else:
-                 document.cc_contacts = []
-        else:
-             document.cc_contacts = []
-             
-        document.date = datetime.strptime(form.date.data, '%Y-%m-%d')
-        # ...
-from utils.auth import role_required
-
-bp = Blueprint('devis', __name__)
-
-@bp.route('/')
-@login_required
-@role_required(['admin', 'manager', 'reporting', 'devis_admin'])
-def index():
-    q = request.args.get('q')
-    if q:
-        search = f"%{q}%"
-        documents = Document.query.join(Client).filter(
-            (Document.type == 'devis') &
-            ((Document.numero.ilike(search)) |
-            (Client.raison_sociale.ilike(search)) |
-            (db.cast(Document.date, db.String).ilike(search)))
-        ).order_by(Document.date.desc()).all()
-    else:
-        documents = Document.query.filter_by(type='devis').order_by(Document.date.desc()).all()
+        documents = Document.query.filter_by(type='devis').order_by(Document.updated_at.desc()).all()
     return render_template('devis/index.html', documents=documents)
 
 @bp.route('/add', methods=['GET', 'POST'])
@@ -110,10 +36,8 @@ def add():
     form.client_id.choices = [(c.id, c.raison_sociale) for c in Client.query.order_by(Client.raison_sociale).all()]
 
     if form.validate_on_submit():
-        # Génération numéro (Logique simple pour l'instant: D-{YYYY}-{Count+1})
         year = datetime.now().year
-        count = Document.query.filter(Document.numero.like(f'D-{year}-%')).count()
-        numero = f'D-{year}-{count + 1:04d}'
+        numero = generate_document_number('D', year)
 
         document = Document(
             type='devis',
@@ -276,3 +200,54 @@ def delete(id):
     db.session.commit()
     flash('Devis supprimé.', 'info')
     return redirect(url_for('devis.index'))
+
+@bp.route('/duplicate/<int:id>', methods=['POST'])
+@login_required
+@role_required(['admin', 'manager', 'devis_admin'])
+def duplicate(id):
+    source = Document.query.get_or_404(id)
+    if source.type != 'devis':
+        abort(403)
+        
+    year = datetime.now().year
+    numero = generate_document_number('D', year)
+    
+    # Create new document copying data from source
+    new_devis = Document(
+        type='devis',
+        numero=numero,
+        date=datetime.now(),
+        client_id=source.client_id,
+        autoliquidation=source.autoliquidation,
+        tva_rate=source.tva_rate,
+        montant_ht=source.montant_ht,
+        tva=source.tva,
+        montant_ttc=source.montant_ttc,
+        client_reference=source.client_reference,
+        chantier_reference=source.chantier_reference,
+        validity_duration=source.validity_duration,
+        created_by_id=current_user.id,
+        updated_by_id=current_user.id,
+        # contact_id=source.contact_id # Removed primary contact logic as per previous sesssions
+    )
+    
+    # Clone CC contacts
+    if source.cc_contacts:
+        new_devis.cc_contacts = list(source.cc_contacts)
+        
+    # Clone lines
+    for ligne in source.lignes:
+        new_ligne = LigneDocument(
+            designation=ligne.designation,
+            quantite=ligne.quantite,
+            prix_unitaire=ligne.prix_unitaire,
+            total_ligne=ligne.total_ligne,
+            category=ligne.category
+        )
+        new_devis.lignes.append(new_ligne)
+        
+    db.session.add(new_devis)
+    db.session.commit()
+    
+    flash(f'Devis {source.numero} dupliqué vers {numero}. Vous pouvez maintenant le modifier.', 'success')
+    return redirect(url_for('devis.edit', id=new_devis.id))

@@ -2,7 +2,7 @@ import os
 from flask import Flask, render_template, request, session, redirect, url_for, jsonify
 from flask_login import login_required, current_user, logout_user
 from config import Config
-from extensions import db, login_manager
+from extensions import db, login_manager, csrf
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -16,6 +16,7 @@ def create_app(config_class=Config):
     # Initialisation des extensions
     db.init_app(app)
     login_manager.init_app(app)
+    csrf.init_app(app)
     login_manager.login_view = 'auth.login'
     login_manager.login_message = "Veuillez vous connecter pour accéder à cette page."
     login_manager.login_message_category = "info"
@@ -101,6 +102,13 @@ def create_app(config_class=Config):
         info = CompanyInfo.query.first()
         ai_settings = AISettings.get_settings()
         return dict(company_info=info, ai_settings=ai_settings)
+    
+    @app.after_request
+    def add_security_headers(response):
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+        response.headers['X-XSS-Protection'] = '1; mode=block'
+        return response
 
     @app.route('/api/active-users')
     @login_required
@@ -202,9 +210,19 @@ def create_app(config_class=Config):
         ).scalar() or 0.0
         
         total_impaye = total_ttc - total_regle
+
+        # 3b. Calcul des dépenses (Bons de commande fournisseurs)
+        total_depenses = db.session.query(func.sum(Document.montant_ht)).filter(
+            Document.type == 'bon_de_commande',
+            Document.date >= start_date,
+            Document.date < end_date
+        ).scalar() or 0.0
+        
+        benefice_net = total_ht - total_depenses
         
         # 4. Données pour le graphique
         monthly_data = []
+        monthly_expense_data = []
         labels = []
         
         if chart_mode == 'monthly':
@@ -217,8 +235,16 @@ def create_app(config_class=Config):
                     Document.date < m_end,
                     ~Document.id.in_(avoir_sources)
                 ).scalar() or 0.0
+                
+                m_expense = db.session.query(func.sum(Document.montant_ht)).filter(
+                    Document.type == 'bon_de_commande',
+                    Document.date >= m_start,
+                    Document.date < m_end
+                ).scalar() or 0.0
+                
                 labels.append(m_start.strftime('%b'))
                 monthly_data.append(m_total)
+                monthly_expense_data.append(m_expense)
         else:
             delta = end_date - start_date
             step = 1 if delta.days <= 60 else max(1, delta.days // 20)
@@ -231,8 +257,16 @@ def create_app(config_class=Config):
                     Document.date < next_curr,
                     ~Document.id.in_(avoir_sources)
                 ).scalar() or 0.0
+                
+                d_expense = db.session.query(func.sum(Document.montant_ht)).filter(
+                    Document.type == 'bon_de_commande',
+                    Document.date >= curr,
+                    Document.date < next_curr
+                ).scalar() or 0.0
+                
                 labels.append(curr.strftime('%d/%m'))
                 monthly_data.append(d_total)
+                monthly_expense_data.append(d_expense)
                 curr = next_curr
 
         # 5. Statistiques par Client
@@ -290,8 +324,11 @@ def create_app(config_class=Config):
             'total_autoliq': total_autoliq,
             'total_regle': total_regle,
             'total_impaye': total_impaye,
+            'total_depenses': total_depenses,
+            'benefice_net': benefice_net,
             'monthly_labels': labels,
             'monthly_data': monthly_data,
+            'monthly_expense_data': monthly_expense_data,
             'client_labels': client_labels,
             'client_data': client_data,
             'filter_label': filter_label,
@@ -347,4 +384,4 @@ if __name__ == '__main__':
     app = create_app()
     with app.app_context():
         db.create_all()
-    app.run(debug=True, port=5001, host='0.0.0.0')
+    app.run(debug=False, port=5001, host='0.0.0.0')

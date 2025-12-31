@@ -92,8 +92,119 @@
                                     <h5 class="mb-0"><i class="fas fa-palette me-2"></i>Apparence</h5>
                                 </div>
                                 <div class="card-body">
-                                    <label class="form-label">{{ form.theme.label }}</label>
-                                    {{ form.theme(class="form-select") }}
+                                    <div class="row mb-4">
+                                        <div class="col-md-6">
+                                            <label class="form-label">{{ form.theme.label }}</label>
+                                            {{ form.theme(class="form-select") }}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Aperçu de l'icône actuelle</label>
+                                            <div class="p-3 bg-primary text-white rounded d-inline-block shadow-sm">
+                                                <i class="{{ info.brand_icon or 'fas fa-tools' }} fa-2x"
+                                                    id="current-icon-display"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <label class="form-label fw-bold mb-3">Choisir un icône (Logo)</label>
+                                    <div class="icon-picker-grid border rounded p-3 bg-white"
+                                        style="max-height: 400px; overflow-y: auto;">
+
+                                        <div class="mb-3">
+                                            <h6 class="text-muted small border-bottom pb-1">Plomberie & Eau</h6>
+                                            <div class="d-flex flex-wrap gap-2">
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-faucet" title="Robinet">
+                                                    <i class="fas fa-faucet fa-lg"></i>
+                                                </div>
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-sink" title="Évier">
+                                                    <i class="fas fa-sink fa-lg"></i>
+                                                </div>
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-tint" title="Goutte">
+                                                    <i class="fas fa-tint fa-lg"></i>
+                                                </div>
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-bath" title="Bain">
+                                                    <i class="fas fa-bath fa-lg"></i>
+                                                </div>
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-shower" title="Douche">
+                                                    <i class="fas fa-shower fa-lg"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <h6 class="text-muted small border-bottom pb-1">Chauffage & Thermique</h6>
+                                            <div class="d-flex flex-wrap gap-2">
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-fire" title="Feu / Brûleur">
+                                                    <i class="fas fa-fire fa-lg"></i>
+                                                </div>
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-burn" title="Flamme">
+                                                    <i class="fas fa-burn fa-lg"></i>
+                                                </div>
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-temperature-high" title="Radiateur / Chauffer">
+                                                    <i class="fas fa-temperature-high fa-lg"></i>
+                                                </div>
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-tachometer-alt" title="Compteur / Pression">
+                                                    <i class="fas fa-tachometer-alt fa-lg"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <h6 class="text-muted small border-bottom pb-1">Climatisation & Air</h6>
+                                            <div class="d-flex flex-wrap gap-2">
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-snowflake" title="Froid / Clim">
+                                                    <i class="fas fa-snowflake fa-lg"></i>
+                                                </div>
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-wind" title="Ventilation">
+                                                    <i class="fas fa-wind fa-lg"></i>
+                                                </div>
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-fan" title="Ventilateur">
+                                                    <i class="fas fa-fan fa-lg"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-0">
+                                            <h6 class="text-muted small border-bottom pb-1">Outils & Services</h6>
+                                            <div class="d-flex flex-wrap gap-2">
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-tools" title="Outils">
+                                                    <i class="fas fa-tools fa-lg"></i>
+                                                </div>
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-wrench" title="Clé">
+                                                    <i class="fas fa-wrench fa-lg"></i>
+                                                </div>
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-screwdriver" title="Tournevis">
+                                                    <i class="fas fa-screwdriver fa-lg"></i>
+                                                </div>
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-hammer" title="Marteau">
+                                                    <i class="fas fa-hammer fa-lg"></i>
+                                                </div>
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-home" title="Maison">
+                                                    <i class="fas fa-home fa-lg"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                    <!-- Hidden field for brand_icon -->
+                                    {{ form.brand_icon(class="d-none", id="brand_icon_input") }}
                                 </div>
                             </div>
 
@@ -299,6 +410,32 @@
     document.getElementById('submit-btn').addEventListener('click', function () {
         var signatureInput = document.getElementById('email_signature_input');
         signatureInput.value = isHtmlMode ? htmlEditor.value : quill.root.innerHTML;
+    });
+
+    // Icon Picker logic
+    const iconItems = document.querySelectorAll('.icon-item');
+    const brandIconInput = document.getElementById('brand_icon_input');
+    const currentIconDisplay = document.getElementById('current-icon-display');
+
+    // Highlight initial icon
+    const initialIcon = brandIconInput.value || 'fas fa-tools';
+    iconItems.forEach(item => {
+        if (item.getAttribute('data-icon') === initialIcon) {
+            item.classList.add('bg-primary', 'text-white');
+        }
+
+        item.addEventListener('click', function () {
+            // Remove selection from others
+            iconItems.forEach(i => i.classList.remove('bg-primary', 'text-white'));
+
+            // Add selection to this one
+            this.classList.add('bg-primary', 'text-white');
+
+            // Update input and live display
+            const selectedIcon = this.getAttribute('data-icon');
+            brandIconInput.value = selectedIcon;
+            currentIconDisplay.className = selectedIcon + ' fa-2x';
+        });
     });
 </script>
 {% endblock %}
