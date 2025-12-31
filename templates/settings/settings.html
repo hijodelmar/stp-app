@@ -1,98 +1,442 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-white py-3">
-                <h4 class="mb-0 text-primary"><i class="fas fa-robot me-2"></i>Paramétrage de l'Assistant IA</h4>
-            </div>
-            <div class="card-body p-4">
-                <form method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                    <!-- Toggle Assistant -->
-                    <div class="form-check form-switch mb-4">
-                        <input class="form-check-input" type="checkbox" id="enabled" name="enabled" {% if
-                            ai_settings.enabled %}checked{% endif %}>
-                        <label class="form-check-label h5 mb-0" for="enabled">Activer l'assistant IA</label>
-                        <div class="form-text">Si désactivé, le widget de chat sera masqué pour tous les utilisateurs.
-                        </div>
-                    </div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-cog me-2"></i>Paramètres</h1>
+    <div>
+        <a href="{{ url_for('settings.template_editor') }}" class="btn btn-warning me-2"><i
+                class="fas fa-paint-brush"></i> Modifier le Template PDF</a>
+        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Retour</a>
+    </div>
+</div>
 
-                    <hr class="my-4">
+<ul class="nav nav-tabs mb-4" id="settingsTabs" role="tablist">
+    <li class="nav-item">
+        <button class="nav-link {% if request.args.get('tab') != 'ai' %}active{% endif %}" id="company-tab"
+            data-bs-toggle="tab" data-bs-target="#company" type="button">Société & Apparence</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link {% if request.args.get('tab') == 'ai' %}active{% endif %}" id="ai-tab"
+            data-bs-toggle="tab" data-bs-target="#ai" type="button">Assistant IA</button>
+    </li>
+</ul>
 
-                    <!-- Provider Selection -->
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">Fournisseur d'IA (LLM Provider)</label>
-                        <select class="form-select" name="provider" id="providerSelect">
-                            <option value="google" {% if ai_settings.provider=='google' %}selected{% endif %}>Google
-                                Gemini
-                                (Recommandé)</option>
-                            <option value="openai" {% if ai_settings.provider=='openai' %}selected{% endif %}>OpenAI GPT
-                                (Bêta)</option>
-                        </select>
-                    </div>
+<div class="tab-content" id="settingsTabsContent">
+    <!-- Company Settings Tab -->
+    <div class="tab-pane fade {% if request.args.get('tab') != 'ai' %}show active{% endif %}" id="company">
+        <div class="row">
+            <div class="col-md-10 mx-auto">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <form method="POST" enctype="multipart/form-data">
+                            {{ form.hidden_tag() }}
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">{{ form.nom.label }}</label>
+                                    {{ form.nom(class="form-control") }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">{{ form.telephone.label }}</label>
+                                    {{ form.telephone(class="form-control") }}
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">{{ form.adresse.label }}</label>
+                                {{ form.adresse(class="form-control") }}
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">{{ form.cp.label }}</label>
+                                    {{ form.cp(class="form-control") }}
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label">{{ form.ville.label }}</label>
+                                    {{ form.ville(class="form-control") }}
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">{{ form.email.label }}</label>
+                                {{ form.email(class="form-control") }}
+                            </div>
 
-                    <!-- API Key -->
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">Clé API</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-key"></i></span>
-                            <input type="password" class="form-control" name="api_key"
-                                value="{{ ai_settings.api_key or '' }}" placeholder="Entrez votre clé API...">
-                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword(this)">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                        </div>
-                        <div class="form-text text-muted small mt-1">
-                            Cette clé sera stockée en base de données. Ne la partagez jamais.
-                        </div>
-                    </div>
+                            <hr class="my-4">
 
-                    <!-- Model Name -->
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">Modèle spécifique</label>
-                        <input type="text" class="form-control" name="model_name"
-                            value="{{ ai_settings.model_name or '' }}"
-                            placeholder="ex: gemini-1.5-flash-latest ou gpt-4o">
-                        <div class="form-text small">Laissez vide pour utiliser le modèle par défaut.</div>
-                    </div>
+                            <!-- Rest of the form remains mostly the same, ensuring all original cards are kept! -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">{{ form.ville_signature.label }}</label>
+                                    {{ form.ville_signature(class="form-control") }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">{{ form.logo.label }}</label>
+                                    {{ form.logo(class="form-control") }}
+                                    {% if info.logo_path %}
+                                    <div class="mt-2"><img src="{{ url_for('static', filename=info.logo_path) }}"
+                                            style="max-height: 50px;"></div>
+                                    {% endif %}
+                                </div>
+                            </div>
 
-                    <div class="d-grid mt-5">
-                        <button type="submit" name="ai_settings_submit" class="btn btn-primary btn-lg">
-                            <i class="fas fa-save me-2"></i>Enregistrer les paramètres
-                        </button>
+                            <div class="mb-3">
+                                <label class="form-label">{{ form.iban.label }}</label>
+                                {{ form.iban(class="form-control") }}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">{{ form.footer_info.label }}</label>
+                                {{ form.footer_info(class="form-control", rows=3) }}
+                            </div>
+
+                            <div class="card bg-light mb-4 border-0 shadow-sm">
+                                <div class="card-header bg-dark text-white rounded-top">
+                                    <h5 class="mb-0"><i class="fas fa-palette me-2"></i>Apparence</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row mb-4">
+                                        <div class="col-md-6">
+                                            <label class="form-label">{{ form.theme.label }}</label>
+                                            {{ form.theme(class="form-select") }}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Aperçu de l'icône actuelle</label>
+                                            <div class="p-3 bg-primary text-white rounded d-inline-block shadow-sm">
+                                                <i class="{{ info.brand_icon or 'fas fa-tools' }} fa-2x"
+                                                    id="current-icon-display"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <label class="form-label fw-bold mb-3">Choisir un icône (Logo)</label>
+                                    <div class="icon-picker-grid border rounded p-3 bg-white"
+                                        style="max-height: 400px; overflow-y: auto;">
+
+                                        <div class="mb-3">
+                                            <h6 class="text-muted small border-bottom pb-1">Plomberie & Eau</h6>
+                                            <div class="d-flex flex-wrap gap-2">
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-faucet" title="Robinet">
+                                                    <i class="fas fa-faucet fa-lg"></i>
+                                                </div>
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-sink" title="Évier">
+                                                    <i class="fas fa-sink fa-lg"></i>
+                                                </div>
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-tint" title="Goutte">
+                                                    <i class="fas fa-tint fa-lg"></i>
+                                                </div>
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-bath" title="Bain">
+                                                    <i class="fas fa-bath fa-lg"></i>
+                                                </div>
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-shower" title="Douche">
+                                                    <i class="fas fa-shower fa-lg"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <h6 class="text-muted small border-bottom pb-1">Chauffage & Thermique</h6>
+                                            <div class="d-flex flex-wrap gap-2">
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-fire" title="Feu / Brûleur">
+                                                    <i class="fas fa-fire fa-lg"></i>
+                                                </div>
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-burn" title="Flamme">
+                                                    <i class="fas fa-burn fa-lg"></i>
+                                                </div>
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-temperature-high" title="Radiateur / Chauffer">
+                                                    <i class="fas fa-temperature-high fa-lg"></i>
+                                                </div>
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-tachometer-alt" title="Compteur / Pression">
+                                                    <i class="fas fa-tachometer-alt fa-lg"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <h6 class="text-muted small border-bottom pb-1">Climatisation & Air</h6>
+                                            <div class="d-flex flex-wrap gap-2">
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-snowflake" title="Froid / Clim">
+                                                    <i class="fas fa-snowflake fa-lg"></i>
+                                                </div>
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-wind" title="Ventilation">
+                                                    <i class="fas fa-wind fa-lg"></i>
+                                                </div>
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-fan" title="Ventilateur">
+                                                    <i class="fas fa-fan fa-lg"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-0">
+                                            <h6 class="text-muted small border-bottom pb-1">Outils & Services</h6>
+                                            <div class="d-flex flex-wrap gap-2">
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-tools" title="Outils">
+                                                    <i class="fas fa-tools fa-lg"></i>
+                                                </div>
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-wrench" title="Clé">
+                                                    <i class="fas fa-wrench fa-lg"></i>
+                                                </div>
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-screwdriver" title="Tournevis">
+                                                    <i class="fas fa-screwdriver fa-lg"></i>
+                                                </div>
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-hammer" title="Marteau">
+                                                    <i class="fas fa-hammer fa-lg"></i>
+                                                </div>
+                                                <div class="icon-item border rounded p-3 cursor-pointer hover-primary"
+                                                    data-icon="fas fa-home" title="Maison">
+                                                    <i class="fas fa-home fa-lg"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                    <!-- Hidden field for brand_icon -->
+                                    {{ form.brand_icon(class="d-none", id="brand_icon_input") }}
+                                </div>
+                            </div>
+
+                            <div class="card bg-light mb-4 border-0 shadow-sm">
+                                <div class="card-header bg-dark text-white rounded-top">
+                                    <h5 class="mb-0"><i class="fas fa-envelope me-2"></i>Email (SMTP)</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row mb-3">
+                                        <div class="col-md-8">
+                                            <label class="form-label">{{ form.smtp_server.label }}</label>
+                                            {{ form.smtp_server(class="form-control") }}
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">{{ form.smtp_port.label }}</label>
+                                            {{ form.smtp_port(class="form-control") }}
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">{{ form.smtp_user.label }}</label>
+                                            {{ form.smtp_user(class="form-control") }}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">{{ form.smtp_password.label }}</label>
+                                            {{ form.smtp_password(class="form-control") }}
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">{{ form.smtp_use_tls(class="form-check-input") }} <label
+                                                class="form-check-label">{{ form.smtp_use_tls.label }}</label></div>
+                                        <div class="col-md-6">{{ form.smtp_use_ssl(class="form-check-input") }} <label
+                                                class="form-check-label">{{ form.smtp_use_ssl.label }}</label></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card bg-light mb-4 shadow-sm border-0">
+                                <div
+                                    class="card-header bg-dark text-white rounded-top d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0"><i class="fas fa-signature me-2"></i>Signature Email</h5>
+                                    <button type="button" class="btn btn-sm btn-outline-light" id="toggle-source">
+                                        <i class="fas fa-code me-1"></i> Mode Code HTML
+                                    </button>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Visual Editor Container -->
+                                    <div id="visual-editor-wrapper">
+                                        <div id="editor-container" style="height: 300px; background: white;"></div>
+                                    </div>
+
+                                    <!-- Raw HTML Editor (hidden by default) -->
+                                    <div id="html-editor-wrapper" class="d-none">
+                                        <textarea id="html-editor" class="form-control"
+                                            style="height: 300px; font-family: monospace; font-size: 13px;">{{ info.email_signature if info.email_signature else '' }}</textarea>
+                                    </div>
+                                    <div class="form-text mt-2 small text-muted">Utilisez l'éditeur visuel ou collez
+                                        votre code HTML.</div>
+                                </div>
+                            </div>
+
+                            <div class="card mb-4 shadow-sm border-0 d-none" id="preview-card">
+                                <div class="card-header bg-info text-white py-1">
+                                    <h6 class="mb-0 small"><i class="fas fa-eye me-2"></i>Aperçu de la signature</h6>
+                                </div>
+                                <div class="card-body p-3 bg-white" id="signature-preview"
+                                    style="border: 1px solid #eee;"></div>
+                            </div>
+
+                            <div class="d-grid">
+                                {{ form.submit(class="btn btn-primary btn-lg", id="submit-btn") }}
+                            </div>
+
+                            <!-- Hidden Field for Signature (handled by script below) -->
+                            {{ form.email_signature(class="d-none", id="email_signature_input") }}
+                        </form>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
+    </div>
 
-        <!-- Documentation Card -->
-        <div class="card mt-4 border-0 shadow-sm bg-light">
-            <div class="card-body">
-                <h5><i class="fas fa-info-circle me-2"></i>Aide au paramétrage</h5>
-                <p class="small text-muted mb-0">
-                    <strong>Google Gemini:</strong> Clé sur <a href="https://aistudio.google.com/"
-                        target="_blank">Google AI Studio</a>. Modèles: <code>gemini-1.5-flash</code>,
-                    <code>gemini-1.5-pro</code>, <code>gemini-2.0-flash-exp</code>.<br>
-                    <strong>OpenAI GPT:</strong> Clé sur <a href="https://platform.openai.com/"
-                        target="_blank">OpenAI</a>. Modèles: <code>gpt-4o-mini</code>, <code>gpt-4o</code>.
-                </p>
+    <!-- AI Settings Tab -->
+    <div class="tab-pane fade {% if request.args.get('tab') == 'ai' %}show active{% endif %}" id="ai">
+        <div class="row">
+            <div class="col-md-8 mx-auto">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0"><i class="fas fa-robot me-2"></i>Assistant IA</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <form method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                            <input type="hidden" name="ai_settings_submit" value="1">
+                            <div class="form-check form-switch mb-4">
+                                <input class="form-check-input" type="checkbox" id="enabled" name="enabled" {% if
+                                    ai_settings.enabled %}checked{% endif %}>
+                                <label class="form-check-label h5 mb-0" for="enabled">Activer l'assistant IA</label>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Fournisseur</label>
+                                <select class="form-select" name="provider">
+                                    <option value="google" {% if ai_settings.provider=='google' %}selected{% endif %}>
+                                        Google Gemini</option>
+                                    <option value="openai" {% if ai_settings.provider=='openai' %}selected{% endif %}>
+                                        OpenAI GPT</option>
+                                </select>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Clé API</label>
+                                <input type="password" class="form-control" name="api_key"
+                                    value="{{ ai_settings.api_key or '' }}">
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Modèle</label>
+                                <input type="text" class="form-control" name="model_name"
+                                    value="{{ ai_settings.model_name or '' }}" placeholder="ex: gemini-1.5-flash">
+                            </div>
+                            <div class="d-grid mt-4">
+                                <button type="submit" class="btn btn-primary">Enregistrer les paramètres IA</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Quill Rich Text Editor -->
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 <script>
-    function togglePassword(btn) {
-        const input = btn.parentElement.querySelector('input');
-        if (input.type === "password") {
-            input.type = "text";
-            btn.innerHTML = '<i class="fas fa-eye-slash"></i>';
-        } else {
-            input.type = "password";
-            btn.innerHTML = '<i class="fas fa-eye"></i>';
+    var quill = new Quill('#editor-container', {
+        theme: 'snow',
+        modules: {
+            toolbar: [
+                [{ 'header': [1, 2, 3, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'color': [] }, { 'background': [] }],
+                [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                ['link', 'image'],
+                ['clean']
+            ]
         }
+    });
+
+    const toggleBtn = document.getElementById('toggle-source');
+    const visualWrapper = document.getElementById('visual-editor-wrapper');
+    const htmlWrapper = document.getElementById('html-editor-wrapper');
+    const htmlEditor = document.getElementById('html-editor');
+    const previewCard = document.getElementById('preview-card');
+    const signaturePreview = document.getElementById('signature-preview');
+    let isHtmlMode = false;
+
+    // Load initial content
+    const initialContent = `{%- if info.email_signature -%}{{ info.email_signature|safe }}{%- endif -%}`;
+
+    // Check if content has tables - if so, default to HTML mode to avoid Quill mangling
+    if (initialContent.includes('<table')) {
+        isHtmlMode = true;
+        htmlWrapper.classList.remove('d-none');
+        visualWrapper.classList.add('d-none');
+        htmlEditor.value = initialContent;
+        toggleBtn.innerHTML = '<i class="fas fa-eye me-1"></i> Mode Visuel (Simple)';
+        previewCard.classList.remove('d-none');
+        updatePreview();
+    } else {
+        quill.root.innerHTML = initialContent;
     }
+
+    function updatePreview() {
+        signaturePreview.innerHTML = isHtmlMode ? htmlEditor.value : quill.root.innerHTML;
+    }
+
+    toggleBtn.addEventListener('click', function () {
+        if (!isHtmlMode) {
+            // Switch to HTML mode
+            htmlEditor.value = quill.root.innerHTML;
+            visualWrapper.classList.add('d-none');
+            htmlWrapper.classList.remove('d-none');
+            toggleBtn.innerHTML = '<i class="fas fa-eye me-1"></i> Mode Visuel (Simple)';
+            isHtmlMode = true;
+            previewCard.classList.remove('d-none');
+        } else {
+            // Switch back to Visual mode
+            if (confirm("Attention : Le retour au mode visuel peut simplifier votre code HTML complexe (tableaux, etc.). Continuer ?")) {
+                quill.root.innerHTML = htmlEditor.value;
+                htmlWrapper.classList.add('d-none');
+                visualWrapper.classList.remove('d-none');
+                toggleBtn.innerHTML = '<i class="fas fa-code me-1"></i> Mode Code HTML';
+                isHtmlMode = false;
+                previewCard.classList.add('d-none');
+            }
+        }
+        updatePreview();
+    });
+
+    // Live preview update for HTML mode
+    htmlEditor.addEventListener('input', updatePreview);
+    quill.on('text-change', updatePreview);
+
+    // On form submit
+    document.getElementById('submit-btn').addEventListener('click', function () {
+        var signatureInput = document.getElementById('email_signature_input');
+        signatureInput.value = isHtmlMode ? htmlEditor.value : quill.root.innerHTML;
+    });
+
+    // Icon Picker logic
+    const iconItems = document.querySelectorAll('.icon-item');
+    const brandIconInput = document.getElementById('brand_icon_input');
+    const currentIconDisplay = document.getElementById('current-icon-display');
+
+    // Highlight initial icon
+    const initialIcon = brandIconInput.value || 'fas fa-tools';
+    iconItems.forEach(item => {
+        if (item.getAttribute('data-icon') === initialIcon) {
+            item.classList.add('bg-primary', 'text-white');
+        }
+
+        item.addEventListener('click', function () {
+            // Remove selection from others
+            iconItems.forEach(i => i.classList.remove('bg-primary', 'text-white'));
+
+            // Add selection to this one
+            this.classList.add('bg-primary', 'text-white');
+
+            // Update input and live display
+            const selectedIcon = this.getAttribute('data-icon');
+            brandIconInput.value = selectedIcon;
+            currentIconDisplay.className = selectedIcon + ' fa-2x';
+        });
+    });
 </script>
 {% endblock %}
