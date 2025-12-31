@@ -51,7 +51,7 @@ def index():
             flash('Paramètres société mis à jour.', 'success')
             return redirect(url_for('settings.index'))
 
-    return render_template('settings.html', form=form, info=info, ai_settings=ai_settings)
+    return render_template('settings/settings.html', form=form, info=info, ai_settings=ai_settings)
 
 @bp.route('/template_editor')
 @login_required
