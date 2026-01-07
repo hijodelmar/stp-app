@@ -1,0 +1,365 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Mes Dépenses</h1>
+    <div>
+        <div class="dropdown d-inline-block me-2">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="exportDropdown"
+                data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-download me-1"></i> Exporter
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                <li><a class="dropdown-item"
+                        href="{{ url_for('expenses.export_excel', search=request.args.get('search', ''), category=request.args.get('category', '')) }}"><i
+                            class="fas fa-file-excel me-2 text-success"></i>Excel (.xlsx)</a></li>
+                <li><a class="dropdown-item"
+                        href="{{ url_for('expenses.print_view', search=request.args.get('search', ''), category=request.args.get('category', '')) }}"
+                        target="_blank"><i class="fas fa-file-pdf me-2 text-danger"></i>Imprimer / PDF</a></li>
+            </ul>
+        </div>
+        <a href="{{ url_for('expenses.add') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nouvelle Dépense
+        </a>
+    </div>
+</div>
+
+<!-- Tabs Navigation -->
+<ul class="nav nav-tabs mb-4" id="expenseTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="list-tab" data-bs-toggle="tab" data-bs-target="#list" type="button"
+            role="tab" aria-selected="true">
+            <i class="fas fa-list me-2"></i>Liste
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats" type="button" role="tab"
+            aria-selected="false" onclick="loadStats()">
+            <i class="fas fa-chart-pie me-2"></i>Statistiques
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="expenseTabsContent">
+    <!-- List Tab -->
+    <div class="tab-pane fade show active" id="list" role="tabpanel" aria-labelledby="list-tab">
+
+        <!-- KPIs du Mois (Condensed) -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #f44336 !important;">
+                    <div class="card-body py-3">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0 p-2 rounded"
+                                style="background-color: rgba(244, 67, 54, 0.1); color: #f44336;">
+                                <i class="fas fa-chart-bar"></i>
+                            </div>
+                            <div class="ms-3">
+                                <small class="text-muted d-block">Total (Mois)</small>
+                                <h5 class="mb-0 fw-bold" style="color: #f44336;">{{ "%.2f"|format(total_ttc) }} €</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #D4AF37 !important;">
+                    <div class="card-body py-3">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0 p-2 rounded" style="background-color: #fff9c4; color: #D4AF37;">
+                                <i class="fas fa-hand-holding-usd"></i>
+                            </div>
+                            <div class="ms-3">
+                                <small class="text-muted d-block">À rembourser</small>
+                                <h5 class="mb-0 fw-bold" style="color: #D4AF37;">{{ "%.2f"|format(to_reimburse) }} €
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body py-3">
+                        <form class="row g-2 align-items-center" method="GET">
+                            <div class="col-auto">
+                                <select name="month" class="form-select form-select-sm">
+                                    {% for m in range(1, 13) %}
+                                    <option value="{{ m }}" {% if current_month==m %}selected{% endif %}>{{ m }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-auto">
+                                <select name="year" class="form-select form-select-sm">
+                                    <option value="2024" {% if current_year==2024 %}selected{% endif %}>2024</option>
+                                    <option value="2025" {% if current_year==2025 %}selected{% endif %}>2025</option>
+                                    <option value="2026" {% if current_year==2026 %}selected{% endif %}>2026</option>
+                                </select>
+                            </div>
+                            <div class="col-auto">
+                                <button type="submit" class="btn btn-outline-secondary btn-sm"><i
+                                        class="fas fa-filter"></i></button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <form action="{{ url_for('expenses.index') }}" method="GET" class="d-flex gap-2">
+                    <input class="form-control" type="text" name="search" placeholder="Rechercher..."
+                        value="{{ request.args.get('search', '') }}">
+
+                    <select name="category" class="form-select w-auto">
+                        <option value="">Toutes catégories</option>
+                        <option value="restaurant" {% if request.args.get('category')=='restaurant' %}selected{% endif
+                            %}>Restaurant</option>
+                        <option value="transport" {% if request.args.get('category')=='transport' %}selected{% endif %}>
+                            Transport</option>
+                        <option value="material" {% if request.args.get('category')=='material' %}selected{% endif %}>
+                            Matériel</option>
+                        <option value="urssaf" {% if request.args.get('category')=='urssaf' %}selected{% endif %}>URSSAF
+                        </option>
+                        <option value="salary" {% if request.args.get('category')=='salary' %}selected{% endif %}>
+                            Salaire</option>
+                        <option value="other" {% if request.args.get('category')=='other' %}selected{% endif %}>Autre
+                        </option>
+                    </select>
+
+                    <button class="btn btn-outline-primary" type="submit">Rechercher</button>
+                    {% if request.args.get('search') or request.args.get('category') %}
+                    <a href="{{ url_for('expenses.index') }}" class="btn btn-outline-secondary" title="Effacer"><i
+                            class="fas fa-times"></i></a>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                {% if expenses %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Catégorie</th>
+                                <th>Paiement</th>
+                                <th>Montant TTC</th>
+                                <th>Justificatif</th>
+                                <th>Historique</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for expense in expenses %}
+                            <tr>
+                                <td>{{ expense.date.strftime('%d/%m/%Y') }}</td>
+                                <td>
+                                    <span class="fw-bold d-block text-dark">{{ expense.description }}</span>
+                                    {% if expense.supplier %}
+                                    <small class="text-muted"><i class="fas fa-building me-1"></i>{{
+                                        expense.supplier.raison_sociale }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if expense.category == 'restaurant' %}
+                                    <span class="badge bg-warning text-dark"><i class="fas fa-utensils me-1"></i>
+                                        Restaurant</span>
+                                    {% elif expense.category == 'transport' %}
+                                    <span class="badge bg-info text-dark"><i class="fas fa-car me-1"></i>
+                                        Transport</span>
+                                    {% elif expense.category == 'material' %}
+                                    <span class="badge bg-secondary"><i class="fas fa-tools me-1"></i> Matériel</span>
+                                    {% elif expense.category == 'urssaf' %}
+                                    <span class="badge bg-danger"><i class="fas fa-university me-1"></i> URSSAF</span>
+                                    {% elif expense.category == 'salary' %}
+                                    <span class="badge bg-success"><i class="fas fa-user-tie me-1"></i> Salaire</span>
+                                    {% else %}
+                                    <span class="badge bg-light text-dark">Autre</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if expense.payment_method == 'company_card' %}
+                                    <span class="small text-primary"><i class="fas fa-credit-card me-1"></i> Carte
+                                        Pro</span>
+                                    {% elif expense.payment_method == 'personal_funds' %}
+                                    <span class="small text-warning"><i class="fas fa-user me-1"></i> Avancé
+                                        perso</span>
+                                    {% if expense.is_reimbursed %}
+                                    <span class="badge bg-success ms-1">Remboursé</span>
+                                    {% else %}
+                                    <span class="badge bg-warning text-dark ms-1">À rembourser</span>
+                                    {% endif %}
+                                    {% else %}
+                                    <span class="small text-muted">Virement</span>
+                                    {% endif %}
+                                </td>
+                                <td class="fw-bold">{{ "%.2f"|format(expense.amount_ttc) }} €</td>
+                                <td>
+                                    {% if expense.proof_path %}
+                                    <a href="{{ url_for('expenses.get_receipt', filename=expense.proof_path) }}"
+                                        target="_blank" class="btn btn-sm btn-outline-info me-1">
+                                        <i class="fas fa-paperclip"></i>
+                                    </a>
+                                    {% else %}
+                                    <span class="text-muted small">Aucun</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="d-block">Créé par: {{ expense.created_by.username if
+                                        expense.created_by else 'Système' }}</small>
+                                    <small class="text-muted">Modifié: {{ expense.updated_by.username if
+                                        expense.updated_by else 'Système' }} ({{ expense.updated_at.strftime('%d/%m/%y')
+                                        }})</small>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('expenses.duplicate', id=expense.id) }}"
+                                        class="btn btn-sm btn-outline-dark me-1" title="Dupliquer">
+                                        <i class="fas fa-copy"></i>
+                                    </a>
+                                    <a href="{{ url_for('expenses.edit', id=expense.id) }}"
+                                        class="btn btn-sm btn-outline-primary me-1" title="Modifier">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
+                                        data-bs-target="#deleteModal{{ expense.id }}" title="Supprimer">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+
+                                    <!-- Delete Modal -->
+                                    <div class="modal fade" id="deleteModal{{ expense.id }}" tabindex="-1"
+                                        aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Confirmer suppression</h5>
+                                                    <button type="button" class="btn-close"
+                                                        data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    Voulez-vous vraiment supprimer cette dépense ?
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary"
+                                                        data-bs-dismiss="modal">Annuler</button>
+                                                    <form action="{{ url_for('expenses.delete', id=expense.id) }}"
+                                                        method="POST">
+                                                        <input type="hidden" name="csrf_token"
+                                                            value="{{ csrf_token() }}">
+                                                        <button type="submit" class="btn btn-danger">Supprimer</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">Aucune dépense trouvée.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Tab -->
+    <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab">
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <h5 class="card-title text-center text-muted mb-4">Répartition par Catégorie</h5>
+                        <div style="height: 300px; position: relative;">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <h5 class="card-title text-center text-muted mb-4">Dépenses Mensuelles ({{ now.year }})</h5>
+                        <div style="height: 300px; position: relative;">
+                            <canvas id="monthlyChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let categoryChart = null;
+    let monthlyChart = null;
+
+    function loadStats() {
+        if (categoryChart) return; // Charts already loaded
+
+        fetch('/expenses/stats-data')
+            .then(response => response.json())
+            .then(data => {
+                // Pie Chart
+                const ctxPie = document.getElementById('categoryChart').getContext('2d');
+                categoryChart = new Chart(ctxPie, {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.pie.labels,
+                        datasets: [{
+                            data: data.pie.data,
+                            backgroundColor: [
+                                '#ffc107', '#0dcaf0', '#6c757d', '#dc3545', '#198754', '#212529'
+                            ],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        }
+                    }
+                });
+
+                // Bar Chart
+                const ctxBar = document.getElementById('monthlyChart').getContext('2d');
+                monthlyChart = new Chart(ctxBar, {
+                    type: 'bar',
+                    data: {
+                        labels: data.bar.labels,
+                        datasets: [{
+                            label: 'Montant (€)',
+                            data: data.bar.data,
+                            backgroundColor: '#0d6efd',
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAtZero: true }
+                        },
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+            })
+            .catch(err => console.error("Error loading stats:", err));
+    }
+</script>
+
+{% endblock %}

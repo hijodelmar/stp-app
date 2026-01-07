@@ -76,6 +76,9 @@ def create_app(config_class=Config):
     from routes.chat import bp as chat_bp
     app.register_blueprint(chat_bp, url_prefix='/api/chat')
 
+    from routes.expenses import bp as expenses_bp
+    app.register_blueprint(expenses_bp, url_prefix='/expenses')
+
     @app.before_request
     def before_request():
         if current_user.is_authenticated:
@@ -129,7 +132,7 @@ def create_app(config_class=Config):
         })
 
     def get_stats():
-        from models import Document
+        from models import Document, Expense
         from sqlalchemy import func, extract
         from datetime import datetime, timedelta
         
@@ -162,7 +165,7 @@ def create_app(config_class=Config):
         avoir_sources = db.session.query(Document.source_document_id).filter(
             Document.type == 'avoir', 
             Document.source_document_id.isnot(None)
-        ).subquery()
+        )
         
         base_query = Document.query.filter(
             Document.type == 'facture',
@@ -211,14 +214,36 @@ def create_app(config_class=Config):
         
         total_impaye = total_ttc - total_regle
 
-        # 3b. Calcul des dépenses (Bons de commande fournisseurs)
-        total_depenses = db.session.query(func.sum(Document.montant_ht)).filter(
+        # 3b. Calcul des dépenses (Bons de commande fournisseurs + Notes de Frais)
+        total_depenses_commandes = db.session.query(func.sum(Document.montant_ht)).filter(
             Document.type == 'bon_de_commande',
             Document.date >= start_date,
             Document.date < end_date
         ).scalar() or 0.0
+
+        total_depenses_expenses = db.session.query(func.sum(Expense.amount_ht)).filter(
+            Expense.date >= start_date,
+            Expense.date < end_date
+        ).scalar() or 0.0
+        
+        total_depenses = total_depenses_commandes + total_depenses_expenses
+
+        # 3c. Calcul TVA Déductible (Commandes + Notes de Frais)
+        tva_commandes = db.session.query(func.sum(Document.tva)).filter(
+            Document.type == 'bon_de_commande',
+            Document.date >= start_date,
+            Document.date < end_date
+        ).scalar() or 0.0
+
+        tva_expenses = db.session.query(func.sum(Expense.tva)).filter(
+            Expense.date >= start_date,
+            Expense.date < end_date
+        ).scalar() or 0.0
+
+        total_tva_deductible = tva_commandes + tva_expenses
         
         benefice_net = total_ht - total_depenses
+        tva_nette = total_tva - total_tva_deductible
         
         # 4. Données pour le graphique
         monthly_data = []
@@ -236,15 +261,21 @@ def create_app(config_class=Config):
                     ~Document.id.in_(avoir_sources)
                 ).scalar() or 0.0
                 
-                m_expense = db.session.query(func.sum(Document.montant_ht)).filter(
+                # Dépenses (Commandes + Frais)
+                m_cmd = db.session.query(func.sum(Document.montant_ht)).filter(
                     Document.type == 'bon_de_commande',
                     Document.date >= m_start,
                     Document.date < m_end
                 ).scalar() or 0.0
                 
+                m_exp = db.session.query(func.sum(Expense.amount_ht)).filter(
+                    Expense.date >= m_start,
+                    Expense.date < m_end
+                ).scalar() or 0.0
+                
                 labels.append(m_start.strftime('%b'))
                 monthly_data.append(m_total)
-                monthly_expense_data.append(m_expense)
+                monthly_expense_data.append(m_cmd + m_exp)
         else:
             delta = end_date - start_date
             step = 1 if delta.days <= 60 else max(1, delta.days // 20)
@@ -306,7 +337,7 @@ def create_app(config_class=Config):
         converted_ids = db.session.query(Document.source_document_id).filter(
             Document.type == 'facture',
             Document.source_document_id.isnot(None)
-        ).subquery()
+        )
         
         converted_devis = db.session.query(func.count(Document.id)).filter(
             Document.type == 'devis',
@@ -325,6 +356,8 @@ def create_app(config_class=Config):
             'total_regle': total_regle,
             'total_impaye': total_impaye,
             'total_depenses': total_depenses,
+            'total_tva_deductible': total_tva_deductible,
+            'tva_nette': tva_nette,
             'benefice_net': benefice_net,
             'monthly_labels': labels,
             'monthly_data': monthly_data,
@@ -384,4 +417,4 @@ if __name__ == '__main__':
     app = create_app()
     with app.app_context():
         db.create_all()
-    app.run(debug=False, port=5001, host='0.0.0.0')
+    app.run(debug=True, port=5001, host='0.0.0.0')

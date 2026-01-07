@@ -17,11 +17,15 @@ def index():
     q = request.args.get('q')
     if q:
         search = f"%{q}%"
-        documents = Document.query.join(Client).filter(
+        # Alias for the source document (Facture) to enable searching by its number
+        SourceDoc = db.aliased(Document)
+        
+        documents = Document.query.join(Client).outerjoin(SourceDoc, Document.source_document).filter(
             (Document.type == 'avoir') &
             ((Document.numero.ilike(search)) |
             (Client.raison_sociale.ilike(search)) |
-            (db.cast(Document.date, db.String).ilike(search)))
+            (db.cast(Document.date, db.String).ilike(search)) |
+            (SourceDoc.numero.ilike(search)))
         ).order_by(Document.updated_at.desc()).all()
     else:
         documents = Document.query.filter_by(type='avoir').order_by(Document.updated_at.desc()).all()
@@ -31,72 +35,9 @@ def index():
 @login_required
 @role_required(['admin', 'manager', 'facture_admin'])
 def add():
-    # Typically avoirs are created from invoices, but standalone creation is possible
-    form = DocumentForm()
-    form.client_id.choices = [(c.id, c.raison_sociale) for c in Client.query.order_by(Client.raison_sociale).all()]
-
-    if form.validate_on_submit():
-        year = datetime.now().year
-        numero = generate_document_number('A', year)
-
-        document = Document(
-            type='avoir',
-            numero=numero,
-            date=datetime.strptime(form.date.data, '%Y-%m-%d'),
-            client_id=form.client_id.data,
-            autoliquidation=form.autoliquidation.data,
-            tva_rate=form.tva_rate.data,
-            client_reference=form.client_reference.data,
-            chantier_reference=form.chantier_reference.data,
-            created_by_id=current_user.id,
-            updated_by_id=current_user.id
-        )
-
-        # Handle optional Primary Contact - REMOVED
-        # if form.contact_id.data:
-        #     document.contact_id = form.contact_id.data
-
-        # Handle CC Contacts
-        if form.cc_contacts.data:
-            cc_ids = form.cc_contacts.data
-            if cc_ids:
-                contacts = ClientContact.query.filter(ClientContact.id.in_(cc_ids)).all()
-                document.cc_contacts = contacts
-        
-        total_ht = 0
-        for ligne_form in form.lignes:
-            l = LigneDocument(
-                designation=ligne_form.designation.data,
-                quantite=ligne_form.quantite.data,
-                prix_unitaire=ligne_form.prix_unitaire.data,
-                total_ligne=ligne_form.quantite.data * ligne_form.prix_unitaire.data,
-                category=ligne_form.category.data
-            )
-            total_ht += l.total_ligne
-            document.lignes.append(l)
-        
-        document.montant_ht = total_ht
-        if document.autoliquidation:
-            document.tva = 0
-        else:
-            document.tva = total_ht * (document.tva_rate / 100)
-        document.montant_ttc = document.montant_ht + document.tva
-        
-        db.session.add(document)
-        db.session.commit()
-        flash(f'Avoir {numero} créé avec succès.', 'success')
-        return redirect(url_for('avoirs.index'))
-    
-    if not form.date.data:
-        form.date.data = datetime.now().strftime('%Y-%m-%d')
-        
-    # Default TVA from Company Settings
-    if request.method == 'GET' and not form.tva_rate.data:
-        info = CompanyInfo.query.first()
-        if info:
-            form.tva_rate.data = info.tva_default
-        
-    return render_template('factures/form.html', form=form, title="Nouvel Avoir")
+    # Enforce creation from existing invoice
+    flash("Pour créer un avoir, veuillez sélectionner la facture correspondante.", "info")
+    return redirect(url_for('avoirs.choose_facture'))
 
 @bp.route('/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
@@ -105,6 +46,15 @@ def edit(id):
     document = Document.query.get_or_404(id)
     if document.type != 'avoir':
         flash('Document invalide.', 'danger')
+        return redirect(url_for('avoirs.index'))
+
+    # RESTRICTION: Cannot edit if sent OR if linked to a source document (Facture)
+    if document.sent_at:
+        flash(f"Impossible de modifier l'avoir {document.numero} car il a déjà été envoyé au client.", 'danger')
+        return redirect(url_for('avoirs.index'))
+        
+    if document.source_document_id:
+        flash(f"Impossible de modifier l'avoir {document.numero} car il a été généré depuis une facture.", 'danger')
         return redirect(url_for('avoirs.index'))
 
     # RESTRICTION: Only allow editing the Date for existing Avoirs
@@ -146,6 +96,11 @@ def delete(id):
     document = Document.query.get_or_404(id)
     if document.type != 'avoir':
         abort(403)
+        
+    # RESTRICTION: Cannot delete if sent
+    if document.sent_at and not current_user.has_role('admin'):
+        flash(f"Impossible de supprimer l'avoir {document.numero} car il a déjà été envoyé au client.", 'danger')
+        return redirect(url_for('avoirs.index'))
         
     db.session.delete(document)
     db.session.commit()

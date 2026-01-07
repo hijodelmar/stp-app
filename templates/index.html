@@ -53,7 +53,7 @@
     </div>
 </div>
 
-<!-- KPI Cards -->
+<!-- Row 1: Key Performance Indicators -->
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #002366 !important;">
@@ -106,9 +106,8 @@
             </div>
         </div>
     </div>
-    <!-- Performance Card -->
     <div class="col-md-3">
-        <div class="card border-0 shadow-sm h-100">
+        <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #2e7d32 !important;">
             <div class="card-body">
                 <div class="d-flex align-items-center mb-2">
                     <div class="flex-shrink-0 p-2 rounded" style="background-color: #e8f5e9; color: #2e7d32;">
@@ -132,12 +131,19 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+</div>
+
+<!-- Row 2: Cash Flow & Status -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
                 <div class="d-flex align-items-center mb-2">
                     <div class="flex-shrink-0 p-2 rounded" style="background-color: #e3f2fd; color: #002366;">
-                        <i class="fas fa-wallet fa-lg"></i>
+                        <span class="fa-stack fa-lg">
+                            <i class="fas fa-wallet fa-stack-2x"></i>
+                            <i class="fas fa-euro-sign fa-stack-1x fa-inverse" style="color: #002366;"></i>
+                        </span>
                     </div>
                     <div class="ms-3">
                         <small class="text-muted d-block">CA TTC encaissé</small>
@@ -148,7 +154,7 @@
             </div>
         </div>
     </div>
-    <div class="col-lg-4 col-md-6">
+    <div class="col-md-4">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
                 <div class="d-flex align-items-center mb-2">
@@ -164,23 +170,7 @@
             </div>
         </div>
     </div>
-    <div class="col-lg-4 col-md-6">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="flex-shrink-0 p-2 rounded" style="background-color: #e0f2f1; color: #00695c;">
-                        <i class="fas fa-percent fa-lg"></i>
-                    </div>
-                    <div class="ms-3">
-                        <small class="text-muted d-block">TVA Collectée</small>
-                        <h4 class="mb-0 fw-bold" style="color: #00695c;"><span class="privacy-value">{{
-                                "%.2f"|format(stats.total_tva) }} €</span></h4>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-4 col-md-6">
+    <div class="col-md-4">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
                 <div class="d-flex align-items-center mb-2">
@@ -191,6 +181,58 @@
                         <small class="text-muted d-block">CA en Auto-liquidation</small>
                         <h4 class="mb-0 fw-bold" style="color: #7b1fa2;"><span class="privacy-value">{{
                                 "%.2f"|format(stats.total_autoliq) }} €</span></h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Row 3: VAT Analysis -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #00695c !important;">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="flex-shrink-0 p-2 rounded" style="background-color: #e0f2f1; color: #00695c;">
+                        <i class="fas fa-plus-circle fa-lg"></i>
+                    </div>
+                    <div class="ms-3">
+                        <small class="text-muted d-block">TVA Collectée (Factures)</small>
+                        <h4 class="mb-0 fw-bold" style="color: #00695c;"><span class="privacy-value">{{
+                                "%.2f"|format(stats.total_tva) }} €</span></h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #1976d2 !important;">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="flex-shrink-0 p-2 rounded" style="background-color: #e3f2fd; color: #1976d2;">
+                        <i class="fas fa-minus-circle fa-lg"></i>
+                    </div>
+                    <div class="ms-3">
+                        <small class="text-muted d-block">TVA Déductible (Achats)</small>
+                        <h4 class="mb-0 fw-bold" style="color: #1976d2;"><span class="privacy-value">{{
+                                "%.2f"|format(stats.total_tva_deductible) }} €</span></h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #333 !important;">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="flex-shrink-0 p-2 rounded" style="background-color: #eceff1; color: #333;">
+                        <i class="fas fa-balance-scale fa-lg"></i>
+                    </div>
+                    <div class="ms-3">
+                        <small class="text-muted d-block">TVA Nette à Payer</small>
+                        <h4 class="mb-0 fw-bold" style="color: #333;"><span class="privacy-value">{{
+                                "%.2f"|format(stats.tva_nette) }} €</span></h4>
                     </div>
                 </div>
             </div>

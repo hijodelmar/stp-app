@@ -166,7 +166,7 @@
                                 {{ ligne.quantite(class="form-control form-control-sm text-end", readonly=True)
                                 }}
                                 {% else %}
-                                {{ ligne.quantite(class="form-control form-control-sm text-end") }}
+                                {{ ligne.quantite(class="form-control form-control-sm text-end", step="1") }}
                                 {% endif %}
                             </div>
                             <div class="col-md-2 full-fields">
@@ -192,6 +192,31 @@
                 </div>
             </div>
 
+            <!-- Summary Section -->
+            <div class="card mt-3">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8"></div>
+                        <div class="col-md-4">
+                            <table class="table table-sm">
+                                <tr>
+                                    <td class="text-end"><strong>Total HT :</strong></td>
+                                    <td class="text-end" id="display-total-ht">0.00 €</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end"><strong id="tva-label">TVA :</strong></td>
+                                    <td class="text-end" id="display-tva">0.00 €</td>
+                                </tr>
+                                <tr class="table-active">
+                                    <td class="text-end"><strong id="net-label">Net à Payer :</strong></td>
+                                    <td class="text-end" id="display-net-payer">0.00 €</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="text-end">
                 <button type="submit" class="btn btn-primary btn-lg">
                     <i class="fas fa-save me-2"></i> Enregistrer
@@ -211,6 +236,7 @@
                 <option value="fourniture" selected>Fourniture</option>
                 <option value="prestation">Prestation</option>
                 <option value="main_doeuvre">Main d'oeuvre</option>
+                <option value="evacuation_dechets">Évacuation des déchets</option>
             </select>
         </div>
         <div class="col-md-4">
@@ -220,7 +246,7 @@
         <div class="col-md-2 full-fields">
             <label class="form-label small">Quantité</label>
             <input type="number" step="0.01" class="form-control form-control-sm text-end"
-                name="lignes-__index__-quantite" value="1.0">
+                name="lignes-__index__-quantite" value="1">
         </div>
         <div class="col-md-2 full-fields">
             <label class="form-label small">Prix Unitaire</label>
@@ -239,10 +265,77 @@
     document.addEventListener('DOMContentLoaded', function () {
         console.log("DOM Loaded - Facture Form Script Init");
 
-        // CONTACTS MANAGEMENT
+        // Helper to safely get element value
+        function getVal(id) {
+            const el = document.getElementById(id);
+            return el ? el.value : null;
+        }
+
+        function calculateTotals() {
+            let totalHT = 0;
+            const rows = document.querySelectorAll('.ligne-item');
+
+            rows.forEach(row => {
+                // Ignore the template row
+                if (row.parentElement && row.parentElement.id === 'ligne-template') return;
+
+                const categorySelect = row.querySelector('.category-select');
+                const qteInput = row.querySelector('input[name*="quantite"]');
+                const prixInput = row.querySelector('input[name*="prix_unitaire"]');
+
+                if (categorySelect && qteInput && prixInput) {
+                    const category = categorySelect.value;
+                    const qte = parseFloat(qteInput.value) || 0;
+                    const prix = parseFloat(prixInput.value) || 0;
+
+                    if (category === 'main_doeuvre' || category === 'evacuation_dechets') {
+                        totalHT += prix;
+                    } else if (category !== 'prestation') {
+                        totalHT += qte * prix;
+                    }
+                }
+            });
+
+            const autoliquid = document.getElementById('autoliquidation');
+            const tvaInput = document.getElementById('tva_rate');
+            let tvaPercent = tvaInput ? parseFloat(tvaInput.value) : 20.0;
+            if (isNaN(tvaPercent)) tvaPercent = 20.0;
+
+            let tvaRate = tvaPercent / 100.0;
+
+            if (autoliquid && autoliquid.checked) {
+                tvaRate = 0;
+            }
+
+            const tva = totalHT * tvaRate;
+            const totalNet = totalHT + tva;
+
+            const totalEl = document.getElementById('display-total-ht');
+            const tvaEl = document.getElementById('display-tva');
+            const netEl = document.getElementById('display-net-payer');
+
+            if (totalEl) totalEl.textContent = totalHT.toFixed(2) + ' €';
+            if (tvaEl) tvaEl.textContent = tva.toFixed(2) + ' €';
+            if (netEl) netEl.textContent = totalNet.toFixed(2) + ' €';
+
+            // Update Labels
+            const tvaLabel = document.getElementById('tva-label');
+            const netLabel = document.getElementById('net-label');
+
+            if (autoliquid && autoliquid.checked) {
+                if (tvaLabel) tvaLabel.textContent = "TVA (Autoliquidation) :";
+                if (netLabel) netLabel.textContent = "Net à Payer (HT) :";
+            } else {
+                if (tvaLabel) tvaLabel.textContent = `TVA (${tvaPercent}%) :`;
+                if (netLabel) netLabel.textContent = "Net à Payer (TTC) :";
+            }
+        }
+
+        // --- CONTACTS MANAGEMENT ---
         const clientSelect = document.getElementById('client_id');
         const ccContainer = document.getElementById('cc_contacts_container');
-        const selectedCcIdsRaw = document.getElementById('selected-cc-ids')?.value;
+        const selectedCcIdsInput = document.getElementById('selected-cc-ids');
+        const selectedCcIdsRaw = selectedCcIdsInput ? selectedCcIdsInput.value : '[]';
 
         let selectedCcIds = [];
         try {
@@ -251,15 +344,17 @@
         } catch (e) { selectedCcIds = []; }
 
         function loadContacts(clientId) {
-            if (!clientId) { // contactSelect might be missing in read-only mode
+            if (!clientId) {
                 if (ccContainer) ccContainer.innerHTML = '<span class="text-muted small">Sélectionnez un client d\'abord...</span>';
                 return;
             }
 
             fetch(`/clients/api/client/${clientId}/contacts`)
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.json();
+                })
                 .then(data => {
-                    // Populate CC Checkboxes
                     if (ccContainer) {
                         if (data.contacts.length === 0) {
                             ccContainer.innerHTML = '<span class="text-muted small">Aucun contact trouvé pour ce client.</span>';
@@ -280,86 +375,141 @@
                         }
                     }
                 })
-                .catch(error => console.error('Error fetching contacts:', error));
+                .catch(error => {
+                    console.error('Error fetching contacts:', error);
+                    if (ccContainer) ccContainer.innerHTML = '<span class="text-danger small">Erreur chargement contacts</span>';
+                });
         }
 
         if (clientSelect) {
             clientSelect.addEventListener('change', function () {
                 loadContacts(this.value);
             });
+            // Load initially if value exists
             if (clientSelect.value) {
                 loadContacts(clientSelect.value);
             }
         }
 
+        // --- LINES MANAGEMENT ---
         function updateLineVisibility(row) {
+            if (!row) return;
+            // Ignore template
+            if (row.parentElement && row.parentElement.id === 'ligne-template') return;
+
             const select = row.querySelector('.category-select');
             const qteInput = row.querySelector('input[name*="quantite"]');
             const prixInput = row.querySelector('input[name*="prix_unitaire"]');
 
             if (!select || !qteInput || !prixInput) return;
 
-            const qteWrapper = qteInput.parentElement;
-            const prixWrapper = prixInput.parentElement;
-            const prixLabel = prixWrapper.querySelector('label');
+            const qteWrapper = qteInput.closest('.full-fields') || qteInput.parentElement;
+            const prixWrapper = prixInput.closest('.full-fields') || prixInput.parentElement;
+
+            // Try to find label in sibling or parent
+            let prixLabel = null;
+            if (prixWrapper) prixLabel = prixWrapper.querySelector('label');
 
             const category = select.value;
 
+            if (qteWrapper) qteWrapper.style.visibility = 'visible';
+            if (prixWrapper) prixWrapper.style.visibility = 'visible';
+
             if (category === 'prestation') {
-                qteWrapper.style.visibility = 'hidden';
-                prixWrapper.style.visibility = 'hidden';
+                if (qteWrapper) qteWrapper.style.visibility = 'hidden';
+                if (prixWrapper) prixWrapper.style.visibility = 'hidden';
                 qteInput.value = 0;
                 prixInput.value = 0;
-            } else if (category === 'main_doeuvre') {
-                qteWrapper.style.visibility = 'hidden';
+            } else if (category === 'main_doeuvre' || category === 'evacuation_dechets') {
+                if (qteWrapper) qteWrapper.style.visibility = 'hidden';
                 qteInput.value = 1;
-                prixWrapper.style.visibility = 'visible';
+                if (prixWrapper) prixWrapper.style.visibility = 'visible';
                 if (prixLabel) prixLabel.textContent = "Montant Total";
             } else {
-                qteWrapper.style.visibility = 'visible';
-                prixWrapper.style.visibility = 'visible';
+                if (qteWrapper) qteWrapper.style.visibility = 'visible';
+                if (prixWrapper) prixWrapper.style.visibility = 'visible';
                 if (prixLabel) prixLabel.textContent = "Prix Unitaire";
             }
+
+            calculateTotals();
         }
 
         const container = document.getElementById('lignes-container');
         if (container) {
+            // Delegation for Category change
             container.addEventListener('change', function (e) {
                 if (e.target.classList.contains('category-select')) {
                     updateLineVisibility(e.target.closest('.ligne-item'));
                 }
             });
 
+            // Delegation for Calculation inputs
+            container.addEventListener('input', function (e) {
+                if (e.target.name && (e.target.name.includes('quantite') || e.target.name.includes('prix_unitaire'))) {
+                    calculateTotals();
+                }
+            });
+
+            // Delegation for Delete button
+            container.addEventListener('click', function (e) {
+                if (e.target.closest('.remove-line')) {
+                    const row = e.target.closest('.ligne-item');
+                    // Check how many visible rows exist (excluding template)
+                    const visibleRows = container.querySelectorAll('.ligne-item');
+                    if (visibleRows.length > 1) {
+                        row.remove();
+                        calculateTotals();
+                    } else {
+                        alert('Le document doit contenir au moins une ligne.');
+                    }
+                }
+            });
+
+            // Initial visibility update
             document.querySelectorAll('.ligne-item').forEach(updateLineVisibility);
 
+            // Add Line Button logic
             const addButton = document.getElementById('add-line');
-            if (addButton) {
-                // SCRIPT GENERATED
-                let lineIndex = {{ form.lignes|length }};
-        const template = document.getElementById('ligne-template').innerHTML;
+            // Safely initialize index
+            let lineIndex = 1;
+            // Attempt to get index from existing length if possible, or just increment
+            const existingRows = container.querySelectorAll('.ligne-item');
+            if (existingRows.length > 0) lineIndex = existingRows.length;
 
-        addButton.addEventListener('click', function () {
-            const newHtml = template.replace(/__index__/g, lineIndex);
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = newHtml;
-            const newRow = tempDiv.firstElementChild;
-            container.appendChild(newRow);
-            updateLineVisibility(newRow);
-            lineIndex++;
-        });
-    }
-            
-            container.addEventListener('click', function (e) {
-        if (e.target.closest('.remove-line')) {
-            const row = e.target.closest('.ligne-item');
-            if (document.querySelectorAll('.ligne-item').length > 1) {
-                row.remove();
-            } else {
-                alert('Le document doit contenir au moins une ligne.');
+            if (addButton) {
+                const templateEl = document.getElementById('ligne-template');
+                if (templateEl) {
+                    const templateHtml = templateEl.innerHTML;
+                    addButton.addEventListener('click', function () {
+                        // Use a timestamp to prevent ID collisions slightly better than basic index if needed
+                        // but simple index is fine for Flask-WTF usually.
+                        const newHtml = templateHtml.replace(/__index__/g, lineIndex);
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = newHtml;
+                        const newRow = tempDiv.firstElementChild;
+
+                        container.appendChild(newRow);
+                        updateLineVisibility(newRow);
+                        lineIndex++;
+                    });
+                }
             }
         }
-    });
+
+        // Global listeners for Totals
+        const autoliquid = document.getElementById('autoliquidation');
+        if (autoliquid) {
+            autoliquid.addEventListener('change', calculateTotals);
         }
+
+        const tvaInput = document.getElementById('tva_rate');
+        if (tvaInput) {
+            tvaInput.addEventListener('input', calculateTotals);
+        }
+
+        // Initial calculation
+        calculateTotals();
     });
 </script>
 {% endblock %}
+```

@@ -205,8 +205,17 @@ def delete(id):
         abort(403)
         
     # Check if an avoir was generated from this facture
-    if document.generated_documents:
+    if document.generated_documents and not current_user.has_role('admin'):
         flash(f"Impossible de supprimer la facture {document.numero} car un avoir y est lié.", 'danger')
+        return redirect(url_for('factures.index'))
+
+    # Check if invoice is paid or sent
+    if document.paid and not current_user.has_role('admin'):
+        flash(f"Impossible de supprimer la facture {document.numero} car elle est marquée comme réglée.", 'danger')
+        return redirect(url_for('factures.index'))
+        
+    if document.sent_at and not current_user.has_role('admin'):
+        flash(f"Impossible de supprimer la facture {document.numero} car elle a déjà été envoyée au client.", 'danger')
         return redirect(url_for('factures.index'))
         
     db.session.delete(document)
@@ -269,93 +278,108 @@ def choose_devis():
 @login_required
 @role_required(['admin', 'manager', 'facture_admin'])
 def convert_from_devis(id):
-    devis = Document.query.get_or_404(id)
-    if devis.type != 'devis':
-         flash('Document non valide pour conversion.', 'danger')
-         return redirect(url_for('devis.index'))
+    try:
+        devis = Document.query.get_or_404(id)
+        if devis.type != 'devis':
+             flash('Document non valide pour conversion.', 'danger')
+             return redirect(url_for('devis.index'))
+        
+        # Smart Regeneration Logic:
+        # Check if an invoice already exists and if the Devis has been modified since then
+        latest_facture = Document.query.filter_by(type='facture', source_document_id=id).order_by(Document.created_at.desc()).first()
+        
+        if latest_facture:
+            # If the Devis hasn't been modified since the latest invoice, block regeneration
+            # Handle None values for timestamps just in case
+            devis_updated = devis.updated_at or datetime.min
+            facture_created = latest_facture.created_at or datetime.min
+            
+            if devis_updated <= facture_created:
+                flash(f'Ce devis a déjà été converti en facture (N° {latest_facture.numero}). Modifiez le devis pour pouvoir générer une nouvelle facture.', 'warning')
+                return redirect(url_for('devis.index'))
+            else:
+                if request.method == 'GET':
+                     flash(f'Note: Une facture existe déjà (N° {latest_facture.numero}), mais le devis a été modifié depuis. Vous générez une nouvelle version.', 'info')
+        
+        if request.method == 'GET':
+            # Show form to enter client reference
+            from forms import DocumentForm
+            form = DocumentForm()
+            form.client_id.choices = [(c.id, c.raison_sociale) for c in Client.query.order_by(Client.raison_sociale).all()]
+            return render_template('factures/convert_form.html', form=form, devis=devis, title="Convertir Devis en Facture")
+        
+        # POST: Process the conversion
+        # Get client reference from form
+        client_reference = request.form.get('client_reference')
+        if not client_reference:
+            flash('La référence client est obligatoire pour générer une facture.', 'danger')
+            return redirect(url_for('factures.convert_from_devis', id=id))
+             
+        # --- NEW: Cleanup old invoices to avoid duplicates ---
+        old_invoices = Document.query.filter_by(type='facture', source_document_id=id).all()
+        if old_invoices:
+            import os
+            for old_inv in old_invoices:
+                # Skip deletion if the invoice is locked (Paid, Sent, or Linked to Avoir)
+                if old_inv.paid or old_inv.sent_at or old_inv.generated_documents:
+                    continue
     
-    # Smart Regeneration Logic:
-    # Check if an invoice already exists and if the Devis has been modified since then
-    latest_facture = Document.query.filter_by(type='facture', source_document_id=id).order_by(Document.created_at.desc()).first()
-    
-    if latest_facture:
-        # If the Devis hasn't been modified since the latest invoice, block regeneration
-        if devis.updated_at <= latest_facture.created_at:
-            flash(f'Ce devis a déjà été converti en facture (N° {latest_facture.numero}). Modifiez le devis pour pouvoir générer une nouvelle facture.', 'warning')
-            return redirect(url_for('devis.index'))
-        else:
-            if request.method == 'GET':
-                 flash(f'Note: Une facture existe déjà (N° {latest_facture.numero}), mais le devis a été modifié depuis. Vous générez une nouvelle version.', 'info')
-    
-    if request.method == 'GET':
-        # Show form to enter client reference
-        from forms import DocumentForm
-        form = DocumentForm()
-        form.client_id.choices = [(c.id, c.raison_sociale) for c in Client.query.order_by(Client.raison_sociale).all()]
-        return render_template('factures/convert_form.html', form=form, devis=devis, title="Convertir Devis en Facture")
-    
-    # POST: Process the conversion
-    # Get client reference from form
-    client_reference = request.form.get('client_reference')
-    if not client_reference:
-        flash('La référence client est obligatoire pour générer une facture.', 'danger')
-        return redirect(url_for('factures.convert_from_devis', id=id))
-         
-    # --- NEW: Cleanup old invoices to avoid duplicates ---
-    old_invoices = Document.query.filter_by(type='facture', source_document_id=id).all()
-    if old_invoices:
-        import os
-        for old_inv in old_invoices:
-            # Delete associated PDF file if it exists
-            if old_inv.pdf_path and os.path.exists(old_inv.pdf_path):
-                try:
-                    os.remove(old_inv.pdf_path)
-                except Exception as e:
-                    print(f"Could not delete old PDF {old_inv.pdf_path}: {e}")
-            db.session.delete(old_inv)
-        db.session.commit()
-    # ---------------------------------------------------
-         
-    year = datetime.now().year
-    count = Document.query.filter(Document.numero.like(f'F-{year}-%')).count()
-    numero = f'F-{year}-{count + 1:04d}'
-    
-    facture = Document(
-        type='facture',
-        numero=numero,
-        date=datetime.now(),
-        client_id=devis.client_id,
-        autoliquidation=devis.autoliquidation,
-        montant_ht=devis.montant_ht,
-        tva_rate=devis.tva_rate if devis.tva_rate else 20.0,
-        tva=devis.tva,
-        montant_ttc=devis.montant_ttc,
-        source_document_id=devis.id,
-        client_reference=client_reference,
-        chantier_reference=devis.chantier_reference,
-        created_by_id=current_user.id,
-        updated_by_id=current_user.id
-    )
-    
-    # Copy contacts from devis
-    # if devis.contact_id:
-    #     facture.contact_id = devis.contact_id
-    
-    if devis.cc_contacts:
-        facture.cc_contacts = list(devis.cc_contacts)
-
-    # Clone lines
-    for ligne in devis.lignes:
-        new_ligne = LigneDocument(
-             designation=ligne.designation,
-             quantite=ligne.quantite,
-             prix_unitaire=ligne.prix_unitaire,
-             total_ligne=ligne.total_ligne,
-             category=ligne.category
+                # Delete associated PDF file if it exists
+                if old_inv.pdf_path and os.path.exists(old_inv.pdf_path):
+                    try:
+                        os.remove(old_inv.pdf_path)
+                    except Exception as e:
+                        print(f"Could not delete old PDF {old_inv.pdf_path}: {e}")
+                db.session.delete(old_inv)
+            db.session.commit()
+        # ---------------------------------------------------
+             
+        year = datetime.now().year
+        from utils.document import generate_document_number
+        numero = generate_document_number('F', year)
+        
+        facture = Document(
+            type='facture',
+            numero=numero,
+            date=datetime.now(),
+            client_id=devis.client_id,
+            autoliquidation=devis.autoliquidation,
+            montant_ht=devis.montant_ht,
+            tva_rate=devis.tva_rate if devis.tva_rate else 20.0,
+            tva=devis.tva,
+            montant_ttc=devis.montant_ttc,
+            source_document_id=devis.id,
+            client_reference=client_reference,
+            chantier_reference=devis.chantier_reference,
+            created_by_id=current_user.id,
+            updated_by_id=current_user.id
         )
-        facture.lignes.append(new_ligne)
+        
+        # Copy contacts from devis
+        # if devis.contact_id:
+        #     facture.contact_id = devis.contact_id
+        
+        if devis.cc_contacts:
+            facture.cc_contacts = list(devis.cc_contacts)
     
-    db.session.add(facture)
-    db.session.commit()
-    flash(f'Devis converti en Facture {numero}.', 'success')
-    return redirect(url_for('factures.index'))
+        # Clone lines
+        for ligne in devis.lignes:
+            new_ligne = LigneDocument(
+                designation=ligne.designation,
+                quantite=ligne.quantite,
+                prix_unitaire=ligne.prix_unitaire,
+                total_ligne=ligne.total_ligne,
+                category=ligne.category
+            )
+            facture.lignes.append(new_ligne)
+        
+        db.session.add(facture)
+        db.session.commit()
+        flash(f'Devis converti en Facture {numero}.', 'success')
+        return redirect(url_for('factures.index'))
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        flash(f"Erreur interne lors de la conversion: {str(e)}", 'danger')
+        return redirect(url_for('devis.index'))

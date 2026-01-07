@@ -81,6 +81,18 @@
                     </li>
                     {% endif %}
 
+                    {% if current_user.has_any_role(['admin', 'manager', 'facture_admin']) %}
+                    <li class="nav-item">
+                        <a class="nav-link text-warning" href="{{ url_for('expenses.index') }}">
+                            <span class="fa-stack" style="font-size: 0.8em;">
+                                <i class="fas fa-wallet fa-stack-2x"></i>
+                                <i class="fas fa-euro-sign fa-stack-1x fa-inverse" style="color: #0d6efd;"></i>
+                            </span>
+                            Dépenses
+                        </a>
+                    </li>
+                    {% endif %}
+
                     {% if current_user.has_any_role(['admin', 'manager', 'settings']) %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('settings.index') }}" style="color: #D4AF37 !important;">

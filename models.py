@@ -176,7 +176,7 @@ class LigneDocument(db.Model):
     document_id = db.Column(db.Integer, db.ForeignKey('document.id'), nullable=False)
     
     designation = db.Column(db.String(200), nullable=False)
-    quantite = db.Column(db.Float, default=1.0)
+    quantite = db.Column(db.Integer, default=1)
     prix_unitaire = db.Column(db.Float, default=0.0)
     total_ligne = db.Column(db.Float, default=0.0)
     category = db.Column(db.String(20), default='fourniture') # 'prestation', 'main_doeuvre', 'fourniture'
@@ -239,3 +239,51 @@ class AISettings(db.Model):
             db.session.add(settings)
             db.session.commit()
         return settings
+
+class Expense(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.Date, nullable=False, default=datetime.utcnow)
+    description = db.Column(db.String(200), nullable=False)
+    amount_ht = db.Column(db.Float, default=0.0)
+    tva = db.Column(db.Float, default=0.0)
+    amount_ttc = db.Column(db.Float, default=0.0)
+    
+    # Categorization
+    category = db.Column(db.String(50), nullable=False) # 'restaurant', 'transport', 'material', 'urssaf', 'salary', 'other'
+    
+    # Payment
+    payment_method = db.Column(db.String(50), nullable=False) # 'company_card', 'personal_funds', 'transfer'
+    is_reimbursed = db.Column(db.Boolean, default=False) # Only relevant for personal_funds
+    
+    # Proof / Receipt
+    proof_path = db.Column(db.String(300), nullable=True) # Path to uploaded file
+    
+    # Links
+    supplier_id = db.Column(db.Integer, db.ForeignKey('supplier.id'), nullable=True)
+    supplier = db.relationship('Supplier', backref='expenses')
+    
+    # Audit trail
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    # Relation with created_by (User)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_by = db.relationship('User', foreign_keys=[created_by_id])
+    
+    updated_by_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    updated_by = db.relationship('User', foreign_keys=[updated_by_id])
+
+    # Relation with attachments
+    attachments = db.relationship('ExpenseAttachment', backref='expense', lazy=True, cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f'<Expense {self.description} - {self.amount_ttc}€>'
+
+class ExpenseAttachment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    expense_id = db.Column(db.Integer, db.ForeignKey('expense.id'), nullable=False)
+    file_path = db.Column(db.String(300), nullable=False) # Relative path
+    filename = db.Column(db.String(300), nullable=False) # Original filename
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<ExpenseAttachment {self.filename}>'

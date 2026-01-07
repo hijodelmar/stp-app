@@ -55,7 +55,18 @@
                             {% endif %}
                         </td>
                         <td>{{ doc.date.strftime('%d/%m/%Y') }}</td>
-                        <td>{{ doc.client.raison_sociale }}</td>
+                        <td>
+                            {{ doc.client.raison_sociale }}
+                            {% if doc.cc_contacts %}
+                            <div class="mt-1">
+                                {% for contact in doc.cc_contacts %}
+                                <span class="badge bg-light text-dark border me-1" title="{{ contact.email }}">
+                                    <i class="fas fa-user-tag text-muted me-1"></i>{{ contact.nom }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </td>
                         <td>
                             {% if doc.source_document %}
                             <span class="badge bg-light text-dark border">{{ doc.source_document.numero }}</span>
@@ -128,15 +139,30 @@
                             </form>
                             {% endif %}
                             {% if current_user.has_any_role(['admin', 'manager', 'facture_admin']) %}
+                            {% if doc.paid or doc.generated_documents or doc.sent_at or doc.source_document %}
+                            <span class="btn btn-sm btn-outline-secondary me-1 disabled"
+                                title="Modification verrouillée (Réglée, Avoir, Envoyée ou Liée à un Devis)"><i
+                                    class="fas fa-lock"></i></span>
+                            {% else %}
                             <a href="{{ url_for('factures.edit', id=doc.id) }}"
                                 class="btn btn-sm btn-outline-primary me-1" title="Modifier"><i
                                     class="fas fa-edit"></i></a>
+                            {% endif %}
+                            {% if not doc.paid and not doc.generated_documents and not doc.sent_at %}
                             <form action="{{ url_for('factures.delete', id=doc.id) }}" method="POST" class="d-inline"
                                 onsubmit="return confirm('Supprimer cette facture ?');">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer"><i
                                         class="fas fa-trash"></i></button>
                             </form>
+                            {% elif current_user.has_role('admin') %}
+                            <form action="{{ url_for('factures.delete', id=doc.id) }}" method="POST" class="d-inline"
+                                onsubmit="return confirm('Attention: Suppression forcée (Admin). Cela peut causer des incohérences si un avoir existe. Continuer ?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                <button type="submit" class="btn btn-sm btn-danger"
+                                    title="Suppression Forcée (Admin)"><i class="fas fa-trash"></i></button>
+                            </form>
+                            {% endif %}
                             {% else %}
                             <span class="badge bg-light text-dark">Lecture seule</span>
                             {% endif %}
@@ -165,6 +191,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-CSRFToken': "{{ csrf_token() }}"
                     }
                 })
                     .then(response => response.json())

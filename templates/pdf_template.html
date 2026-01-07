@@ -323,6 +323,8 @@
                 <td style="border-bottom: 1px solid #000;">
                     {% if l.category == 'prestation' %}
                     <b>Prestation :</b> {{ l.designation|replace('\n', '<br>')|safe }}
+                    {% elif l.category == 'evacuation_dechets' %}
+                    <b>Évacuation des déchets</b>
                     {% elif l.category == 'main_doeuvre' %}
                     <b>Main-d'œuvre</b>
                     {% else %}
@@ -332,7 +334,7 @@
 
                 {# Quantité #}
                 <td style="text-align: right; border-bottom: 1px solid #000;">
-                    {% if l.category == 'prestation' or l.category == 'main_doeuvre' %}
+                    {% if l.category == 'prestation' or l.category == 'main_doeuvre' or l.category == 'evacuation_dechets' %}
                     {# Empty #}
                     {% else %}
                     {{ l.quantite|round(2) }}
@@ -341,7 +343,7 @@
 
                 {# Prix Unitaire #}
                 <td style="text-align: right; border-bottom: 1px solid #000;">
-                    {% if l.category == 'prestation' or l.category == 'main_doeuvre' %}
+                    {% if l.category == 'prestation' or l.category == 'main_doeuvre' or l.category == 'evacuation_dechets' %}
                     {# Empty for both #}
                     {% else %}
                     {{ "%.2f"|format(l.prix_unitaire) }} €

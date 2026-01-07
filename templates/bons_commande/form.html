@@ -75,7 +75,7 @@
 
                     <div class="card mb-4">
                         <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                            <span>Articles à commander</span>
+                            <span>Articles Ã  commander</span>
                             <button type="button" class="btn btn-sm btn-success" id="add-line">
                                 <i class="fas fa-plus"></i> Ajouter une ligne
                             </button>
@@ -93,7 +93,7 @@
                                     </div>
                                     <div class="col-md-2">
                                         {{ ligne.quantite.label(class="form-label small") }}
-                                        {{ ligne.quantite(class="form-control form-control-sm text-end") }}
+                                        {{ ligne.quantite(class="form-control form-control-sm text-end", step="1") }}
                                     </div>
                                     <div class="col-md-2">
                                         {{ ligne.prix_unitaire.label(class="form-label small") }}
@@ -136,7 +136,7 @@
         <div class="col-md-2">
             <label class="form-label small">Quantité</label>
             <input type="number" step="0.01" class="form-control form-control-sm text-end"
-                name="lignes-__index__-quantite" value="1.0">
+                name="lignes-__index__-quantite" value="1">
         </div>
         <div class="col-md-2">
             <label class="form-label small">Prix Unitaire</label>
@@ -153,11 +153,20 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        const autoliquidCheckbox = document.getElementById('autoliquidation');
+        if (autoliquidCheckbox) {
+            autoliquidCheckbox.addEventListener('change', calculateTotals);
+            // Also update input-group-text if needed? Maybe not.
+        }
+        const tvaRateInput = document.getElementById('tva_rate');
+        if (tvaRateInput) {
+            tvaRateInput.addEventListener('input', calculateTotals);
+        }
+        
         const container = document.getElementById('lignes-container');
         const addButton = document.getElementById('add-line');
         const template = document.getElementById('ligne-template').innerHTML;
-        let lineIndex = {{ form.lignes| length
-    }};
+        let lineIndex = {{ form.lignes|length }};
 
     if (addButton && container) {
         addButton.addEventListener('click', function () {

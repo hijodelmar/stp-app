@@ -36,10 +36,11 @@ class LigneDocumentForm(FlaskForm):
     category = SelectField('Type', choices=[
         ('fourniture', 'Fourniture'),
         ('prestation', 'Prestation'),
-        ('main_doeuvre', "Main d'oeuvre")
+        ('main_doeuvre', "Main d'oeuvre"),
+        ('evacuation_dechets', 'Évacuation des déchets')
     ], default='fourniture')
     designation = StringField('Désignation', validators=[DataRequired()])
-    quantite = FloatField('Quantité', default=1.0, validators=[InputRequired()])
+    quantite = IntegerField('Quantité', default=1, validators=[InputRequired()])
     prix_unitaire = FloatField('Prix Unitaire HT', default=0.0, validators=[InputRequired()])
     # Total ligne calculated separately or in JS
 

@@ -14,7 +14,7 @@
                     <div class="alert alert-info">
                         <h5>Devis à convertir :</h5>
                         <p><strong>Numéro :</strong> {{ devis.numero }}</p>
-                        <p><strong>Client :</strong> {{ devis.client.nom if devis.client else 'N/A' }}</p>
+                        <p><strong>Client :</strong> {{ devis.client.raison_sociale if devis.client else 'N/A' }}</p>
                         <p><strong>Date :</strong> {{ devis.date.strftime('%d/%m/%Y') }}</p>
                         <p><strong>Montant TTC :</strong> {{ "%.2f"|format(devis.montant_ttc) }} €</p>
                     </div>

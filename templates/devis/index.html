@@ -58,6 +58,12 @@
                                 <i class="fas fa-check-circle"></i> FACTURÉ
                             </span>
                             {% endif %}
+
+                            {% if latest_inv.generated_documents %}
+                            <span class="badge bg-info text-dark ms-1" title="Un avoir est associé à la facture">
+                                <i class="fas fa-undo"></i> AVOIR
+                            </span>
+                            {% endif %}
                             {% endif %}
 
                             {% if doc.sent_at %}
@@ -66,7 +72,18 @@
                             {% endif %}
                         </td>
                         <td>{{ doc.date.strftime('%d/%m/%Y') }}</td>
-                        <td>{{ doc.client.raison_sociale }}</td>
+                        <td>
+                            {{ doc.client.raison_sociale }}
+                            {% if doc.cc_contacts %}
+                            <div class="mt-1">
+                                {% for contact in doc.cc_contacts %}
+                                <span class="badge bg-light text-dark border me-1" title="{{ contact.email }}">
+                                    <i class="fas fa-user-tag text-muted me-1"></i>{{ contact.nom }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </td>
                         <td>
                             <small class="d-block">Créé par: {{ doc.created_by.username if doc.created_by else 'Système'
                                 }}</small>
@@ -108,8 +125,21 @@
                                 </button>
                             </form>
 
+                            {% set ns_lock = namespace(locked=False) %}
+                            {% for inv in invoices %}
+                            {% if inv.generated_documents or inv.sent_at %}
+                            {% set ns_lock.locked = True %}
+                            {% endif %}
+                            {% endfor %}
+
+                            {% if ns_lock.locked %}
+                            <span class="btn btn-sm btn-outline-secondary me-1 disabled"
+                                title="Modification verrouillée (Facture associée avec Avoir ou Envoyée)"><i
+                                    class="fas fa-lock"></i></span>
+                            {% else %}
                             <a href="{{ url_for('devis.edit', id=doc.id) }}" class="btn btn-sm btn-outline-primary me-1"
                                 title="Modifier"><i class="fas fa-edit"></i></a>
+                            {% endif %}
 
                             {% set invoices = doc.generated_documents|selectattr("type", "equalto",
                             "facture")|list|sort(attribute='created_at', reverse=True) %}

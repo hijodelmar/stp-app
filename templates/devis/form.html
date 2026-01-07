@@ -111,7 +111,7 @@
                                     </div>
                                     <div class="col-md-2 full-fields">
                                         {{ ligne.quantite.label(class="form-label small") }}
-                                        {{ ligne.quantite(class="form-control form-control-sm text-end") }}
+                                        {{ ligne.quantite(class="form-control form-control-sm text-end", step="1") }}
                                     </div>
                                     <div class="col-md-2 full-fields">
                                         {{ ligne.prix_unitaire.label(class="form-label small") }}
@@ -141,11 +141,11 @@
                                             <td class="text-end" id="display-total-ht">0.00 €</td>
                                         </tr>
                                         <tr>
-                                            <td class="text-end"><strong>TVA (Autoliquidation) :</strong></td>
+                                            <td class="text-end"><strong id="tva-label">TVA :</strong></td>
                                             <td class="text-end" id="display-tva">0.00 €</td>
                                         </tr>
                                         <tr class="table-active">
-                                            <td class="text-end"><strong>NET à Payer (HT) :</strong></td>
+                                            <td class="text-end"><strong id="net-label">Net à Payer :</strong></td>
                                             <td class="text-end" id="display-net-payer">0.00 €</td>
                                         </tr>
                                     </table>
@@ -173,6 +173,7 @@
                 <option value="fourniture" selected>Fourniture</option>
                 <option value="prestation">Prestation</option>
                 <option value="main_doeuvre">Main d'oeuvre</option>
+                                        <option value="evacuation_dechets">Évacuation des déchets</option>
             </select>
         </div>
         <div class="col-md-4">
@@ -182,7 +183,7 @@
         <div class="col-md-2 full-fields">
             <label class="form-label small">Quantité</label>
             <input type="number" step="0.01" class="form-control form-control-sm text-end"
-                name="lignes-__index__-quantite" value="1.0">
+                name="lignes-__index__-quantite" value="1">
         </div>
         <div class="col-md-2 full-fields">
             <label class="form-label small">Prix Unitaire</label>
@@ -212,10 +213,10 @@
 
                 if (categorySelect && qteInput && prixInput) {
                     const category = categorySelect.value;
-                    const qte = parseFloat(qteInput.value) || 0;
+                    const qte = parseInt(qteInput.value) || 0;
                     const prix = parseFloat(prixInput.value) || 0;
 
-                    if (category === 'main_doeuvre') {
+                    if (category === 'main_doeuvre' || category === 'evacuation_dechets') {
                         totalHT += prix;
                     } else if (category !== 'prestation') {
                         totalHT += qte * prix;
@@ -242,6 +243,17 @@
             if (totalEl) totalEl.textContent = totalHT.toFixed(2) + ' €';
             if (tvaEl) tvaEl.textContent = tva.toFixed(2) + ' €';
             if (netEl) netEl.textContent = totalNet.toFixed(2) + ' €';
+
+            // Update Labels
+            const tvaLabel = document.getElementById('tva-label');
+            const netLabel = document.getElementById('net-label');
+            if (autoliquid && autoliquid.checked) {
+                if (tvaLabel) tvaLabel.textContent = "TVA (Autoliquidation) :";
+                if (netLabel) netLabel.textContent = "Net à Payer (HT) :";
+            } else {
+                if (tvaLabel) tvaLabel.textContent = `TVA (${tvaPercent}%) :`;
+                if (netLabel) netLabel.textContent = "Net à Payer (TTC) :";
+            }
         }
 
         function updateLineVisibility(row) {
@@ -276,7 +288,7 @@
                 qteInput.value = 0;
                 prixInput.value = 0;
 
-            } else if (category === 'main_doeuvre') {
+            } else if (category === 'main_doeuvre' || category === 'evacuation_dechets') {
                 // Main d'oeuvre: Hide Qty AND Designation. 
                 // Expand Price to fill space (Category=2, Trash=2 -> Price=8)
                 qteWrapper.style.display = 'none';
@@ -295,6 +307,16 @@
             calculateTotals();
         }
 
+        const autoliquidCheckbox = document.getElementById('autoliquidation');
+        if (autoliquidCheckbox) {
+            autoliquidCheckbox.addEventListener('change', calculateTotals);
+            // Also update input-group-text if needed? Maybe not.
+        }
+        const tvaRateInput = document.getElementById('tva_rate');
+        if (tvaRateInput) {
+            tvaRateInput.addEventListener('input', calculateTotals);
+        }
+        
         const container = document.getElementById('lignes-container');
         if (container) {
             container.addEventListener('change', function (e) {
@@ -315,8 +337,9 @@
 
             // Add Line Button Logic
             const addButton = document.getElementById('add-line');
-            if (addButton) {
-                let lineIndex = {{ form.lignes|length }};
+            let lineIndex = {{ form.lignes|length }};
+
+    if (addButton) {
         const template = document.getElementById('ligne-template').innerHTML;
 
         addButton.addEventListener('click', function () {
@@ -330,8 +353,8 @@
         });
     }
 
-            // Remove Line implementation
-            container.addEventListener('click', function (e) {
+    // Remove Line implementation
+    container.addEventListener('click', function (e) {
         if (e.target.closest('.remove-line')) {
             const row = e.target.closest('.ligne-item');
             if (document.querySelectorAll('.ligne-item').length > 1) {

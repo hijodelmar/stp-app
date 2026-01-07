@@ -34,6 +34,20 @@
     --warning-bg: #2c2c00;
 }
 
+[data-theme="ocean"] {
+    /* Ocean Theme */
+    --primary-color: #0077be;
+    --secondary-color: #00a693;
+    --navbar-bg: linear-gradient(to right, #006994, #0093AF);
+    --bg-color: #f0f8ff;
+    --text-color: #002366;
+    --card-bg: #ffffff;
+    --border-color: #b0e0e6;
+    --info-bg: #e0ffff;
+    --success-bg: #e0f2f1;
+    --warning-bg: #fffde7;
+}
+
 /* Base Styles */
 body {
     font-family: 'Outfit', sans-serif;
