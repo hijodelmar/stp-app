@@ -148,6 +148,7 @@
                                 class="btn btn-sm btn-outline-primary me-1" title="Modifier"><i
                                     class="fas fa-edit"></i></a>
                             {% endif %}
+                            {% if current_user.has_role('admin') %}
                             {% if not doc.paid and not doc.generated_documents and not doc.sent_at %}
                             <form action="{{ url_for('factures.delete', id=doc.id) }}" method="POST" class="d-inline"
                                 onsubmit="return confirm('Supprimer cette facture ?');">
@@ -155,13 +156,14 @@
                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer"><i
                                         class="fas fa-trash"></i></button>
                             </form>
-                            {% elif current_user.has_role('admin') %}
+                            {% else %}
                             <form action="{{ url_for('factures.delete', id=doc.id) }}" method="POST" class="d-inline"
                                 onsubmit="return confirm('Attention: Suppression forcée (Admin). Cela peut causer des incohérences si un avoir existe. Continuer ?');">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                 <button type="submit" class="btn btn-sm btn-danger"
                                     title="Suppression Forcée (Admin)"><i class="fas fa-trash"></i></button>
                             </form>
+                            {% endif %}
                             {% endif %}
                             {% else %}
                             <span class="badge bg-light text-dark">Lecture seule</span>

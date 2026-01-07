@@ -114,6 +114,7 @@
                             {% endif %}
 
                             <!-- Delete Button Restriction -->
+                            {% if current_user.has_role('admin') %}
                             {% if not doc.sent_at %}
                             <form action="{{ url_for('avoirs.delete', id=doc.id) }}" method="POST" class="d-inline"
                                 onsubmit="return confirm('Supprimer cet avoir ?');">
@@ -121,13 +122,14 @@
                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer"><i
                                         class="fas fa-trash"></i></button>
                             </form>
-                            {% elif current_user.has_role('admin') %}
+                            {% else %}
                             <form action="{{ url_for('avoirs.delete', id=doc.id) }}" method="POST" class="d-inline"
                                 onsubmit="return confirm('Attention: Suppression forcée (Admin) d\'un avoir envoyé. Continuer ?');">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                 <button type="submit" class="btn btn-sm btn-danger"
                                     title="Suppression Forcée (Admin)"><i class="fas fa-trash"></i></button>
                             </form>
+                            {% endif %}
                             {% endif %}
                             {% else %}
                             <span class="badge bg-light text-dark">Lecture seule</span>

@@ -91,7 +91,7 @@ def edit(id):
 
 @bp.route('/delete/<int:id>', methods=['POST'])
 @login_required
-@role_required(['admin', 'manager', 'facture_admin'])
+@role_required(['admin'])
 def delete(id):
     document = Document.query.get_or_404(id)
     if document.type != 'avoir':
