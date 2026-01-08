@@ -9,7 +9,7 @@
                 <a href="{{ url_for('factures.index') }}" class="btn btn-outline-light btn-sm">Retour</a>
             </div>
             <div class="card-body">
-                <form method="POST" action="">
+                <form method="POST" action="" id="facture-form">
                     {{ form.hidden_tag() }}
 
                     <div class="card mb-4">
@@ -265,12 +265,6 @@
     document.addEventListener('DOMContentLoaded', function () {
         console.log("DOM Loaded - Facture Form Script Init");
 
-        // Helper to safely get element value
-        function getVal(id) {
-            const el = document.getElementById(id);
-            return el ? el.value : null;
-        }
-
         function calculateTotals() {
             let totalHT = 0;
             const rows = document.querySelectorAll('.ligne-item');
@@ -400,11 +394,15 @@
             const select = row.querySelector('.category-select');
             const qteInput = row.querySelector('input[name*="quantite"]');
             const prixInput = row.querySelector('input[name*="prix_unitaire"]');
+            const desInput = row.querySelector('input[name*="designation"]');
 
             if (!select || !qteInput || !prixInput) return;
 
             const qteWrapper = qteInput.closest('.full-fields') || qteInput.parentElement;
             const prixWrapper = prixInput.closest('.full-fields') || prixInput.parentElement;
+            const desWrapper = desInput.closest('.col-md-4') || desInput.parentElement; // Assuming designation is in col-md-4
+
+            if (!qteWrapper || !prixWrapper || !desWrapper) return;
 
             // Try to find label in sibling or parent
             let prixLabel = null;
@@ -412,22 +410,35 @@
 
             const category = select.value;
 
-            if (qteWrapper) qteWrapper.style.visibility = 'visible';
-            if (prixWrapper) prixWrapper.style.visibility = 'visible';
+            // Reset visibility (display) and classes
+            qteWrapper.style.display = 'block';
+            prixWrapper.style.display = 'block';
+            desWrapper.style.display = 'block';
+            desWrapper.className = 'col-md-4'; // Reset to default width
+            prixWrapper.className = 'col-md-2 full-fields'; // Reset price width
 
             if (category === 'prestation') {
-                if (qteWrapper) qteWrapper.style.visibility = 'hidden';
-                if (prixWrapper) prixWrapper.style.visibility = 'hidden';
+                qteWrapper.style.display = 'none';
+                prixWrapper.style.display = 'none';
+                desWrapper.className = 'col-md-8'; // Expand designation to fill space
+
+                // Set values to 0 for backend (valid float)
                 qteInput.value = 0;
                 prixInput.value = 0;
+
             } else if (category === 'main_doeuvre' || category === 'evacuation_dechets') {
-                if (qteWrapper) qteWrapper.style.visibility = 'hidden';
+                // Main d'oeuvre: Hide Qty AND Designation.
+                // Expand Price to fill space (Category=2, Trash=2 -> Price=8)
+                qteWrapper.style.display = 'none';
+                desWrapper.style.display = 'none';
+
                 qteInput.value = 1;
-                if (prixWrapper) prixWrapper.style.visibility = 'visible';
+                if (desInput) desInput.value = "Main d'oeuvre"; // Default text
+
                 if (prixLabel) prixLabel.textContent = "Montant Total";
+                prixWrapper.className = 'col-md-8 full-fields'; // Expand price to fill space
+
             } else {
-                if (qteWrapper) qteWrapper.style.visibility = 'visible';
-                if (prixWrapper) prixWrapper.style.visibility = 'visible';
                 if (prixLabel) prixLabel.textContent = "Prix Unitaire";
             }
 
@@ -470,19 +481,27 @@
 
             // Add Line Button logic
             const addButton = document.getElementById('add-line');
-            // Safely initialize index
-            let lineIndex = 1;
-            // Attempt to get index from existing length if possible, or just increment
-            const existingRows = container.querySelectorAll('.ligne-item');
-            if (existingRows.length > 0) lineIndex = existingRows.length;
+
+            // SAFE INDEX CALCULATION to prevent collisions
+            let lineIndex = 0;
+            const inputs = container.querySelectorAll('input[name^="lignes-"]');
+            inputs.forEach(input => {
+                const name = input.getAttribute('name');
+                const match = name.match(/lignes-(\d+)-/);
+                if (match) {
+                    const idx = parseInt(match[1]);
+                    if (idx >= lineIndex) lineIndex = idx + 1;
+                }
+            });
+            // If completely empty but container has children (legacy), rely on count
+            if (lineIndex === 0 && container.children.length > 0) lineIndex = container.children.length;
+
 
             if (addButton) {
                 const templateEl = document.getElementById('ligne-template');
                 if (templateEl) {
                     const templateHtml = templateEl.innerHTML;
                     addButton.addEventListener('click', function () {
-                        // Use a timestamp to prevent ID collisions slightly better than basic index if needed
-                        // but simple index is fine for Flask-WTF usually.
                         const newHtml = templateHtml.replace(/__index__/g, lineIndex);
                         const tempDiv = document.createElement('div');
                         tempDiv.innerHTML = newHtml;
@@ -507,9 +526,51 @@
             tvaInput.addEventListener('input', calculateTotals);
         }
 
+        // --- FORM SUBMISSION: RE-INDEXING (CRITICAL FOR SAVING) ---
+        const form = document.getElementById('facture-form');
+        if (form) {
+            if (form) {
+                form.addEventListener('submit', function (e) {
+                    const rows = container.querySelectorAll('.ligne-item');
+                    let realIndex = 0;
+                    let debugMsg = "Preparing to save lines:\n";
+
+                    rows.forEach(row => {
+                        // Ignore template
+                        if (row.parentElement && row.parentElement.id === 'ligne-template') return;
+
+                        // Update names for all inputs/selects in this row
+                        const inputs = row.querySelectorAll('input, select, textarea');
+                        inputs.forEach(input => {
+                            const name = input.getAttribute('name');
+                            if (name && name.startsWith('lignes-')) {
+                                // Replace the index section: lignes-X-field -> lignes-{realIndex}-field
+                                const newName = name.replace(/lignes-\d+-/, `lignes-${realIndex}-`);
+                                input.setAttribute('name', newName);
+
+                                // FORCE FORM ASSOCIATION
+                                input.setAttribute('form', 'facture-form');
+
+                                // Also update ID if present to avoid collisions
+                                if (input.id) {
+                                    const newId = input.id.replace(/lignes-\d+-/, `lignes-${realIndex}-`);
+                                    input.setAttribute('id', newId);
+                                }
+                                debugMsg += `  - Input: ${newName}\n`;
+                            }
+                        });
+                        debugMsg += `Line processsed as Index ${realIndex}\n`;
+                        realIndex++;
+                    });
+
+                    // Optional: Alert to confirm lines are detected (Remove after verifying)
+                    // alert(debugMsg);
+                });
+            }
+        }
+
         // Initial calculation
         calculateTotals();
     });
 </script>
 {% endblock %}
-```

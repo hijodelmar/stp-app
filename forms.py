@@ -40,8 +40,8 @@ class LigneDocumentForm(FlaskForm):
         ('evacuation_dechets', 'Évacuation des déchets')
     ], default='fourniture')
     designation = StringField('Désignation', validators=[DataRequired()])
-    quantite = IntegerField('Quantité', default=1, validators=[InputRequired()])
-    prix_unitaire = FloatField('Prix Unitaire HT', default=0.0, validators=[InputRequired()])
+    quantite = FloatField('Quantité', default=1.0, validators=[Optional()])
+    prix_unitaire = FloatField('Prix Unitaire HT', default=0.0, validators=[Optional()])
     # Total ligne calculated separately or in JS
 
 from wtforms import StringField, SubmitField, IntegerField, FloatField, BooleanField, SelectField, FieldList, FormField, TextAreaField, SelectMultipleField
