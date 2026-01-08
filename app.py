@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, session, redirect, url_for, j
 from flask_login import login_required, current_user, logout_user
 from config import Config
 from extensions import db, login_manager, csrf
+import re # Added for regex in the new filter
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -20,6 +21,42 @@ def create_app(config_class=Config):
     login_manager.login_view = 'auth.login'
     login_manager.login_message = "Veuillez vous connecter pour accéder à cette page."
     login_manager.login_message_category = "info"
+
+    # Custom Jinja2 filter for cleaning HTML in PDF
+    def clean_html_for_pdf(html_content):
+        """
+        Clean Quill HTML output for PDF rendering:
+        - Convert <ul><li> lists to <p> elements with bullets (•)
+        - Use <p> with inline styles for xhtml2pdf compatibility
+        """
+        if not html_content:
+            return html_content
+        
+        # Remove <p> tags (Quill wraps content in <p>)
+        cleaned = re.sub(r'<p[^>]*>', '', html_content)
+        cleaned = re.sub(r'</p>', '', cleaned)
+        
+        # Convert <li>text</li> to <p style="margin:2px 0 2px 15px; padding:0">• text</p>
+        cleaned = re.sub(
+            r'<li[^>]*>(.*?)</li>', 
+            r'<p style="margin:2px 0 2px 15px; padding:0; line-height:1.3">• \1</p>', 
+            cleaned, 
+            flags=re.DOTALL
+        )
+        
+        # Remove <ul> and </ul> tags
+        cleaned = re.sub(r'</?ul[^>]*>', '', cleaned)
+        
+        # Remove any <br> tags (we use p now)
+        cleaned = re.sub(r'<br\s*/?>', '', cleaned)
+        
+        # Clean up excessive whitespace
+        cleaned = re.sub(r'[ \t]+', ' ', cleaned)
+        cleaned = re.sub(r'\n+', ' ', cleaned)
+        
+        return cleaned.strip()
+
+    app.jinja_env.filters['clean_html_for_pdf'] = clean_html_for_pdf
 
     @login_manager.user_loader
     def load_user(user_id):

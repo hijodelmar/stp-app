@@ -67,11 +67,15 @@ def add():
         # Calcul des totaux et ajout des lignes
         total_ht = 0
         for ligne_form in form.lignes:
+            # Handle None values
+            qte = ligne_form.quantite.data if ligne_form.quantite.data is not None else 0.0
+            prix = ligne_form.prix_unitaire.data if ligne_form.prix_unitaire.data is not None else 0.0
+            
             l = LigneDocument(
                 designation=ligne_form.designation.data,
-                quantite=ligne_form.quantite.data,
-                prix_unitaire=ligne_form.prix_unitaire.data,
-                total_ligne=ligne_form.quantite.data * ligne_form.prix_unitaire.data,
+                quantite=qte,
+                prix_unitaire=prix,
+                total_ligne=qte * prix,
                 category=ligne_form.category.data
             )
             total_ht += l.total_ligne
@@ -160,11 +164,15 @@ def edit(id):
         
         total_ht = 0
         for ligne_form in form.lignes:
+            # Handle None values
+            qte = ligne_form.quantite.data if ligne_form.quantite.data is not None else 0.0
+            prix = ligne_form.prix_unitaire.data if ligne_form.prix_unitaire.data is not None else 0.0
+            
             l = LigneDocument(
                 designation=ligne_form.designation.data,
-                quantite=ligne_form.quantite.data,
-                prix_unitaire=ligne_form.prix_unitaire.data,
-                total_ligne=ligne_form.quantite.data * ligne_form.prix_unitaire.data,
+                quantite=qte,
+                prix_unitaire=prix,
+                total_ligne=qte * prix,
                 category=ligne_form.category.data
             )
             total_ht += l.total_ligne

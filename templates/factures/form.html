@@ -235,6 +235,7 @@
             <select class="form-select form-select-sm category-select" name="lignes-__index__-category">
                 <option value="fourniture" selected>Fourniture</option>
                 <option value="prestation">Prestation</option>
+                <option value="texte_libre">Texte libre</option>
                 <option value="main_doeuvre">Main d'oeuvre</option>
                 <option value="evacuation_dechets">Évacuation des déchets</option>
             </select>
@@ -261,6 +262,38 @@
     </div>
 </div>
 
+<!-- Quill Rich Text Editor -->
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+
+<style>
+    /* Quill Editor Styling */
+    .quill-editor-wrapper {
+        margin-top: 5px;
+    }
+
+    .ql-container {
+        min-height: 100px;
+        font-size: 0.875rem;
+        background-color: white;
+    }
+
+    .ql-editor {
+        min-height: 100px;
+    }
+
+    .ql-toolbar {
+        background-color: #f8f9fa;
+        border: 1px solid #ced4da;
+        border-bottom: none;
+    }
+
+    .rich-text-editor {
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+    }
+</style>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         console.log("DOM Loaded - Facture Form Script Init");
@@ -282,10 +315,10 @@
                     const qte = parseFloat(qteInput.value) || 0;
                     const prix = parseFloat(prixInput.value) || 0;
 
-                    if (category === 'main_doeuvre' || category === 'evacuation_dechets') {
-                        totalHT += prix;
-                    } else if (category !== 'prestation') {
-                        totalHT += qte * prix;
+                    if (category === 'main_doeuvre' || category === 'evacuation_dechets' || category === 'prestation' || category === 'texte_libre') {
+                        totalHT += prix; // Price is total amount
+                    } else {
+                        totalHT += qte * prix; // Standard calc
                     }
                 }
             });
@@ -417,26 +450,70 @@
             desWrapper.className = 'col-md-4'; // Reset to default width
             prixWrapper.className = 'col-md-2 full-fields'; // Reset price width
 
-            if (category === 'prestation') {
-                qteWrapper.style.display = 'none';
-                prixWrapper.style.display = 'none';
-                desWrapper.className = 'col-md-8'; // Expand designation to fill space
+            // Destroy existing Quill editor if present
+            if (row._quillInstance) {
+                const oldEditor = desWrapper.querySelector('.ql-container');
+                if (oldEditor) oldEditor.parentElement.remove();
+                row._quillInstance = null;
+            }
 
-                // Set values to 0 for backend (valid float)
-                qteInput.value = 0;
-                prixInput.value = 0;
+            // Show plain input by default
+            if (desInput) desInput.style.display = 'block';
+
+            if (category === 'prestation' || category === 'texte_libre') {
+                // Hide quantity, show designation and price as "Montant Total"
+                qteWrapper.style.display = 'none';
+                desWrapper.className = 'col-md-6'; // Expand designation
+                prixWrapper.className = 'col-md-4 full-fields'; // Expand price
+
+                qteInput.value = 1; // Set to 1 for calculation
+
+                if (prixLabel) prixLabel.textContent = "Montant Total";
+
+                // Initialize Quill rich text editor
+                if (desInput) {
+                    desInput.style.display = 'none';
+
+                    const editorContainer = document.createElement('div');
+                    editorContainer.className = 'quill-editor-wrapper';
+
+                    const editorDiv = document.createElement('div');
+                    editorDiv.className = 'rich-text-editor';
+
+                    editorContainer.appendChild(editorDiv);
+                    desInput.parentElement.appendChild(editorContainer);
+
+                    const quill = new Quill(editorDiv, {
+                        theme: 'snow',
+                        modules: {
+                            toolbar: [
+                                ['bold', 'underline'],
+                                [{ 'list': 'bullet' }]
+                            ]
+                        },
+                        placeholder: 'Saisissez le texte formaté...'
+                    });
+
+                    if (desInput.value) {
+                        quill.root.innerHTML = desInput.value;
+                    }
+
+                    quill.on('text-change', function () {
+                        desInput.value = quill.root.innerHTML;
+                    });
+
+                    row._quillInstance = quill;
+                }
 
             } else if (category === 'main_doeuvre' || category === 'evacuation_dechets') {
-                // Main d'oeuvre: Hide Qty AND Designation.
-                // Expand Price to fill space (Category=2, Trash=2 -> Price=8)
                 qteWrapper.style.display = 'none';
                 desWrapper.style.display = 'none';
 
                 qteInput.value = 1;
-                if (desInput) desInput.value = "Main d'oeuvre"; // Default text
+                if (desInput) desInput.value = '-';
 
                 if (prixLabel) prixLabel.textContent = "Montant Total";
-                prixWrapper.className = 'col-md-8 full-fields'; // Expand price to fill space
+                prixWrapper.className = 'col-md-8 full-fields';
 
             } else {
                 if (prixLabel) prixLabel.textContent = "Prix Unitaire";

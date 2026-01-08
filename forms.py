@@ -36,6 +36,7 @@ class LigneDocumentForm(FlaskForm):
     category = SelectField('Type', choices=[
         ('fourniture', 'Fourniture'),
         ('prestation', 'Prestation'),
+        ('texte_libre', 'Texte libre'),
         ('main_doeuvre', "Main d'oeuvre"),
         ('evacuation_dechets', 'Évacuation des déchets')
     ], default='fourniture')

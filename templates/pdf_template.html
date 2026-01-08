@@ -300,9 +300,9 @@
     <table class="items-table">
         <thead>
             <tr style="background-color: #ddd;">
-                <th style="width: 45%;">Désignation</th>
-                <th style="width: 15%; text-align: right;">Qté</th>
-                <th style="width: 20%; text-align: right;">Prix Unitaire HT</th>
+                <th style="width: 55%;">Désignation</th>
+                <th style="width: 10%; text-align: right;">Qté</th>
+                <th style="width: 15%; text-align: right;">Prix Unitaire HT</th>
                 <th style="width: 20%; text-align: right;">Total HT</th>
             </tr>
         </thead>
@@ -322,19 +322,23 @@
             <tr>
                 <td style="border-bottom: 1px solid #000;">
                     {% if l.category == 'prestation' %}
-                    <b>Prestation :</b> {{ l.designation|replace('\n', '<br>')|safe }}
+                    <b>Prestation :</b><br>{{ l.designation|clean_html_for_pdf|safe }}
+                    {% elif l.category == 'texte_libre' %}
+                    {{ l.designation|clean_html_for_pdf|safe }}
                     {% elif l.category == 'evacuation_dechets' %}
                     <b>Évacuation des déchets</b>
                     {% elif l.category == 'main_doeuvre' %}
                     <b>Main-d'œuvre</b>
                     {% else %}
-                    {{ l.designation|replace('\n', '<br>')|safe }}
+                    {{ l.designation|clean_html_for_pdf|safe }}
                     {% endif %}
                 </td>
 
                 {# Quantité #}
                 <td style="text-align: right; border-bottom: 1px solid #000;">
-                    {% if l.category == 'prestation' or l.category == 'main_doeuvre' or l.category == 'evacuation_dechets' %}
+                    {% if l.category == 'prestation' or l.category == 'texte_libre' or l.category == 'main_doeuvre' or
+                    l.category ==
+                    'evacuation_dechets' %}
                     {# Empty #}
                     {% else %}
                     {{ l.quantite|round(2) }}
@@ -343,8 +347,9 @@
 
                 {# Prix Unitaire #}
                 <td style="text-align: right; border-bottom: 1px solid #000;">
-                    {% if l.category == 'prestation' or l.category == 'main_doeuvre' or l.category == 'evacuation_dechets' %}
-                    {# Empty for both #}
+                    {% if l.category == 'prestation' or l.category == 'texte_libre' or l.category == 'main_doeuvre' or
+                    l.category == 'evacuation_dechets' %}
+                    {# Hide price for these types #}
                     {% else %}
                     {{ "%.2f"|format(l.prix_unitaire) }} €
                     {% endif %}
@@ -354,6 +359,8 @@
                 <td style="text-align: right; border-bottom: 1px solid #000;">
                     {% if l.category == 'prestation' %}
                     {# Prestation: hidden total #}
+                    {% elif l.category == 'texte_libre' and l.total_ligne == 0 %}
+                    {# Texte libre with no amount: blank #}
                     {% else %}
                     {{ "%.2f"|format(l.total_ligne) }} €
                     {% endif %}
