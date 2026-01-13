@@ -57,38 +57,38 @@ def generate_pdf(document):
         from flask import url_for
         import uuid
         
+        # QR Code Generation (Enabled for ALL documents)
         qr_code_b64 = None
         
-        if document.type != 'bon_de_commande':
-            # Ensure token exists (Silent Update)
-            if not document.secure_token:
-                original_updated = document.updated_at # Capture timestamp
-                document.secure_token = str(uuid.uuid4())
+        # Ensure token exists (Silent Update)
+        if not document.secure_token:
+            original_updated = document.updated_at # Capture timestamp
+            document.secure_token = str(uuid.uuid4())
+            db.session.commit()
+            
+            # Restore timestamp if changed
+            if document.updated_at != original_updated:
+                document.updated_at = original_updated
                 db.session.commit()
-                
-                # Restore timestamp if changed
-                if document.updated_at != original_updated:
-                    document.updated_at = original_updated
-                    db.session.commit()
-                
-            # Generate link
-            verify_url = url_for('public.verify', token=document.secure_token, _external=True)
             
-            # Make QR
-            qr = qrcode.QRCode(
-                version=1,
-                error_correction=qrcode.constants.ERROR_CORRECT_L,
-                box_size=10,
-                border=4,
-            )
-            qr.add_data(verify_url)
-            qr.make(fit=True)
-            
-            img = qr.make_image(fill_color="black", back_color="white")
-            buffered = BytesIO()
-            img.save(buffered, format="PNG")
-            qr_code_b64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
-            print(f"DEBUG: QR Code Generated. Length: {len(qr_code_b64)}")
+        # Generate link
+        verify_url = url_for('public.verify', token=document.secure_token, _external=True)
+        
+        # Make QR
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(verify_url)
+        qr.make(fit=True)
+        
+        img = qr.make_image(fill_color="black", back_color="white")
+        buffered = BytesIO()
+        img.save(buffered, format="PNG")
+        qr_code_b64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
+        print(f"DEBUG: QR Code Generated. Length: {len(qr_code_b64)}")
         
         # Rendu du template HTML
         html_string = render_template('pdf_template.html', 
