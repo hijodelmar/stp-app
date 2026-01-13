@@ -60,10 +60,16 @@ def generate_pdf(document):
         qr_code_b64 = None
         
         if document.type != 'bon_de_commande':
-            # Ensure token exists
+            # Ensure token exists (Silent Update)
             if not document.secure_token:
+                original_updated = document.updated_at # Capture timestamp
                 document.secure_token = str(uuid.uuid4())
                 db.session.commit()
+                
+                # Restore timestamp if changed
+                if document.updated_at != original_updated:
+                    document.updated_at = original_updated
+                    db.session.commit()
                 
             # Generate link
             verify_url = url_for('public.verify', token=document.secure_token, _external=True)
@@ -102,9 +108,15 @@ def generate_pdf(document):
         if pisa_status.err:
             raise Exception(f"Erreur PDF (code {pisa_status.err})")
         
-        # Update database
+        # Update database (Silent Update)
+        original_updated_final = document.updated_at
         document.pdf_path = filename
         db.session.commit()
+        
+        # Restore timestamp to prevent "Mise à jour" badge
+        if document.updated_at != original_updated_final:
+            document.updated_at = original_updated_final
+            db.session.commit()
         
         return filename
         
