@@ -93,7 +93,7 @@
                     </li>
                     {% endif %}
 
-                    {% if current_user.has_any_role(['admin', 'manager', 'settings']) %}
+                    {% if current_user.has_any_role(['admin', 'settings', 'user_admin']) %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('settings.index') }}" style="color: #D4AF37 !important;">
                             <i class="fas fa-cog me-1"></i> Paramètres
