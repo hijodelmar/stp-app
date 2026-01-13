@@ -6,6 +6,7 @@ import sys
 
 # Script para corregir el estado "Mise à jour" de un Devis específico
 # Para usarlo: python fix_prod_data.py
+# testomar
 
 def fix_devis(numero_devis):
     app = create_app()
