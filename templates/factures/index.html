@@ -129,14 +129,12 @@
 
                             {% if doc.cc_contacts and current_user.has_any_role(['admin', 'manager', 'facture_admin'])
                             %}
-                            <form action="{{ url_for('mail.send_document', id=doc.id) }}" method="POST" class="d-inline"
-                                onsubmit="return confirm('Envoyer cette facture par email aux destinataires sélectionnés ?');">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                                <button type="submit" class="btn btn-sm btn-outline-dark me-1"
-                                    title="Envoyer par email">
-                                    <i class="fas fa-envelope"></i>
-                                </button>
-                            </form>
+                            <button type="button" class="btn btn-sm btn-outline-dark me-1 send-email-btn"
+                                data-doc-id="{{ doc.id }}" data-client-id="{{ doc.client_id }}"
+                                data-current-cc="{{ doc.cc_contacts|map(attribute='id')|list|tojson }}"
+                                title="Envoyer par email">
+                                <i class="fas fa-envelope"></i>
+                            </button>
                             {% endif %}
                             {% if current_user.has_any_role(['admin', 'manager', 'facture_admin']) %}
                             {% if doc.paid or doc.generated_documents or doc.sent_at or doc.source_document %}
@@ -180,9 +178,43 @@
     </div>
 </div>
 
+<!-- Email Selection Modal -->
+<div class="modal fade" id="emailSelectionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="emailSendForm" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Sélectionner les destinataires</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small">Cochez les contacts qui recevront cet email.</p>
+                    <div id="contactsListLoader" class="text-center py-3">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Chargement...</span>
+                        </div>
+                    </div>
+                    <div id="contactsListContainer" class="list-group">
+                        <!-- Contacts will be loaded here -->
+                    </div>
+                    <div id="noContactsMessage" class="alert alert-warning d-none">
+                        Ce client n'a aucun contact avec email.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary"><i
+                            class="fas fa-paper-plane me-2"></i>Envoyer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Add double-click handler to all payment status badges
+        // Payment Status Logic
         document.querySelectorAll('.payment-status').forEach(function (badge) {
             badge.addEventListener('dblclick', function () {
                 const docId = this.getAttribute('data-id');
@@ -222,6 +254,66 @@
                     .catch(error => {
                         console.error('Error:', error);
                         alert('Erreur lors de la mise à jour du statut');
+                    });
+            });
+        });
+
+        // --- Email Modal Logic ---
+        const emailModal = new bootstrap.Modal(document.getElementById('emailSelectionModal'));
+        const contactsContainer = document.getElementById('contactsListContainer');
+        const loader = document.getElementById('contactsListLoader');
+        const noContactsMsg = document.getElementById('noContactsMessage');
+        const emailForm = document.getElementById('emailSendForm');
+
+        document.querySelectorAll('.send-email-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const docId = this.getAttribute('data-doc-id');
+                const clientId = this.getAttribute('data-client-id');
+                const currentCCs = JSON.parse(this.getAttribute('data-current-cc') || '[]');
+
+                // Reset Modal State
+                contactsContainer.innerHTML = '';
+                loader.classList.remove('d-none');
+                noContactsMsg.classList.add('d-none');
+                emailForm.action = `/mail/send_document/${docId}`;
+
+                emailModal.show();
+
+                // Fetch Contacts
+                fetch(`/clients/api/client/${clientId}/contacts`)
+                    .then(response => response.json())
+                    .then(data => {
+                        loader.classList.add('d-none');
+                        if (data.contacts && data.contacts.length > 0) {
+                            // Filter contacts with valid emails
+                            const validContacts = data.contacts.filter(c => c.email && c.email.trim() !== '');
+
+                            if (validContacts.length === 0) {
+                                noContactsMsg.classList.remove('d-none');
+                                return;
+                            }
+
+                            validContacts.forEach(c => {
+                                const isChecked = currentCCs.includes(c.id) ? 'checked' : '';
+                                const item = document.createElement('label');
+                                item.className = 'list-group-item d-flex gap-3 align-items-center';
+                                item.innerHTML = `
+                                    <input class="form-check-input flex-shrink-0" type="checkbox" name="recipient_ids" value="${c.id}" ${isChecked} style="font-size: 1.375em;">
+                                    <span class="pt-1 form-checked-content">
+                                        <strong>${c.nom}</strong>
+                                        <small class="d-block text-muted">${c.email}</small>
+                                    </span>
+                                `;
+                                contactsContainer.appendChild(item);
+                            });
+                        } else {
+                            noContactsMsg.classList.remove('d-none');
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        loader.classList.add('d-none');
+                        alert("Erreur lors du chargement des contacts.");
                     });
             });
         });

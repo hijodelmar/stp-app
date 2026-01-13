@@ -30,6 +30,20 @@ def send_document(id):
 
     info = CompanyInfo.query.first()
     
+    # Update CC Contacts if provided in form (Generic 'recipient_ids' from Modal)
+    if request.method == 'POST' and 'recipient_ids' in request.form:
+        from models import ClientContact
+        recipient_ids = request.form.getlist('recipient_ids')
+        if recipient_ids:
+            new_ccs = ClientContact.query.filter(ClientContact.id.in_(recipient_ids)).all()
+            doc.cc_contacts = new_ccs
+            db.session.commit()
+        else:
+            # If empty list provided implies clearing them? Or just sending to none? 
+            # User wants to select additional contacts. Let's assume emptiness means clear current list.
+            doc.cc_contacts = []
+            db.session.commit()
+
     # Determine recipient
     recipient_emails = []
     
