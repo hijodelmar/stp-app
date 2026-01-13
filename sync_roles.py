@@ -6,44 +6,67 @@ app = create_app()
 
 def sync_roles():
     """
-    Ensures all necessary roles exist in the database.
-    Add new roles to the list below.
+    Master Role Sync Script
+    - Adds missing roles
+    - Updates descriptions for existing roles
+    - Removes undefined roles
     """
-    required_roles = [
-        'admin', 
-        'manager', 
-        'reporting', 
-        'settings', 
-        'user_admin',
-        'access_expenses',
-        'access_clients',
-        'access_documents'
-    ]
+    
+    # Source of Truth (Local)
+    roles_data = {
+        'admin': 'Administrateur complet',
+        'manager': 'Gestionnaire (Docs/Clients, pas de Paramètres/Users)',
+        'settings': 'Accès aux Paramètres uniquement',
+        'user_admin': 'Gestion des Utilisateurs',
+        'reporting': 'Accès aux rapports et dashboard',
+        'devis_admin': 'Gestion complète des Devis',
+        'facture_admin': 'Gestion complète des Factures',
+        'avoir_admin': 'Gestion complète des Avoirs',
+        'client_admin': 'Gestion complète des Clients',
+        'supplier_admin': 'Gestion complète des Fournisseurs',
+        'access_expenses': 'Grants access to the detailed Expenses module'
+    }
 
-    print("🔄 Checking Roles...")
+    print("🔄 Syncing Roles & Descriptions...")
     
     with app.app_context():
-        existing_roles = {r.name for r in Role.query.all()}
+        current_db_roles = Role.query.all()
+        current_roles_map = {r.name: r for r in current_db_roles}
         
         roles_added = 0
-        for role_name in required_roles:
-            if role_name not in existing_roles:
-                print(f"➕ Adding missing role: {role_name}")
-                new_role = Role(name=role_name)
+        roles_updated = 0
+        roles_deleted = 0
+        
+        # 1. Add or Update
+        for name, desc in roles_data.items():
+            if name in current_roles_map:
+                role = current_roles_map[name]
+                if role.description != desc:
+                    print(f"📝 Updating desc for '{name}'")
+                    role.description = desc
+                    roles_updated += 1
+            else:
+                print(f"➕ Adding role '{name}'")
+                new_role = Role(name=name, description=desc)
                 db.session.add(new_role)
                 roles_added += 1
-            else:
-                print(f"✓ Role exists: {role_name}")
+
+        # 2. Delete Extras
+        for role in current_db_roles:
+            if role.name not in roles_data:
+                print(f"🗑️ Deleting extra role '{role.name}'")
+                db.session.delete(role)
+                roles_deleted += 1
         
-        if roles_added > 0:
+        if roles_added or roles_updated or roles_deleted:
             try:
                 db.session.commit()
-                print(f"✅ Successfully added {roles_added} new roles.")
+                print(f"✅ Sync Complete: +{roles_added} Added, ~{roles_updated} Updated, -{roles_deleted} Deleted.")
             except Exception as e:
                 db.session.rollback()
-                print(f"❌ Error saving roles: {e}")
+                print(f"❌ Error: {e}")
         else:
-            print("✅ All roles are already up to date.")
+            print("✅ Roles are already perfectly aligned.")
 
 if __name__ == "__main__":
     sync_roles()
