@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold"><i class="fas fa-users-cog text-primary"></i> Utilisateurs Connectés</h2>
+            <a href="{{ url_for('settings.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Retour
+            </a>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">Utilisateur</th>
+                                <th>Dernière Activité</th>
+                                <th>Statut</th>
+                                <th class="text-end pe-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-circle bg-primary text-white me-3 d-flex align-items-center justify-content-center rounded-circle"
+                                            style="width: 40px; height: 40px;">
+                                            {{ user.username[0]|upper }}
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold">{{ user.username }}</div>
+                                            <div class="small text-muted">
+                                                {% for role in user.roles %}
+                                                <span class="badge bg-secondary">{{ role.name }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if user.last_active %}
+                                    {{ user.last_active.strftime('%d/%m/%Y %H:%M') }}
+                                    <br>
+                                    <small class="text-muted">
+                                        (il y a {{ ((now - user.last_active).total_seconds() / 60)|round|int }} min)
+                                    </small>
+                                    {% else %}
+                                    <span class="text-muted">Inconnu</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-success rounded-pill">
+                                        <i class="fas fa-circle fa-xs me-1"></i> En ligne
+                                    </span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    {% if user.id != current_user.id %}
+                                    <form action="{{ url_for('auth.eject_user', user_id=user.id) }}" method="POST"
+                                        class="d-inline"
+                                        onsubmit="return confirm('Voulez-vous vraiment déconnecter cet utilisateur ?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                                            <i class="fas fa-power-off me-1"></i> Éjecter
+                                        </button>
+                                    </form>
+                                    {% else %}
+                                    <span class="badge bg-light text-dark border">Vous</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">
+                                    Aucun utilisateur actif (hormis vous peut-être).
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

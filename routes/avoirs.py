@@ -74,6 +74,10 @@ def edit(id):
             form.cc_contacts.data = [c.id for c in document.cc_contacts]
 
     if form.validate_on_submit():
+        # Supprimer l'ancien PDF pour régénération
+        from services.pdf_generator import delete_old_pdf
+        delete_old_pdf(document)
+
         # ONLY UPDATE THE DATE
         document.date = datetime.strptime(form.date.data, '%Y-%m-%d')
         

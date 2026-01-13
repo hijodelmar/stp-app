@@ -243,6 +243,12 @@ class GoogleProvider:
         response = self.model.generate_content(prompt)
         return response.text
 
+    def generate_with_image(self, prompt, image_path):
+        import PIL.Image
+        img = PIL.Image.open(image_path)
+        response = self.model.generate_content([prompt, img])
+        return response.text
+
 class OpenAIProvider:
     def __init__(self, api_key, model_name=None):
         from openai import OpenAI

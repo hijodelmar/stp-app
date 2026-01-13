@@ -1,8 +1,9 @@
 import os
-from flask import Flask, render_template, request, session, redirect, url_for, jsonify
+from flask import Flask, render_template, request, session, redirect, url_for, jsonify, flash
 from flask_login import login_required, current_user, logout_user
 from config import Config
 from extensions import db, login_manager, csrf
+from datetime import datetime
 import re # Added for regex in the new filter
 try:
     from dotenv import load_dotenv
@@ -116,6 +117,9 @@ def create_app(config_class=Config):
     from routes.expenses import bp as expenses_bp
     app.register_blueprint(expenses_bp, url_prefix='/expenses')
 
+    from routes.public import bp as public_bp
+    app.register_blueprint(public_bp, url_prefix='/')
+
     @app.before_request
     def before_request():
         if current_user.is_authenticated:
@@ -130,12 +134,85 @@ def create_app(config_class=Config):
                     flash("Votre session a été fermée car vous vous êtes connecté sur un autre appareil.", "warning")
                     return redirect(url_for('auth.login'))
 
-            # 2. Update last active timestamp
-            from datetime import datetime
+            # 2. Check for Forced Ejection (Targeted)
+            # Must happen BEFORE updating last_active to prevent "zombie" active status
+            if current_user.force_logout_at:
+                login_at = session.get('login_at')
+                # If login time is unknown OR login happened BEFORE the force logout
+                should_logout = False
+                
+                if not login_at:
+                    should_logout = True
+                else:
+                     # Handle string (serialized) vs datetime
+                    if isinstance(login_at, str):
+                        try:
+                            login_at = datetime.strptime(login_at, '%a, %d %b %Y %H:%M:%S %Z')
+                        except:
+                            pass
+                            
+                    if isinstance(login_at, datetime):
+                        # Ensure we compare apples to apples (remove timezone if any)
+                        login_at_naive = login_at.replace(tzinfo=None)
+                        force_logout_naive = current_user.force_logout_at.replace(tzinfo=None)
+                        
+                        if login_at_naive < force_logout_naive:
+                            should_logout = True
+                            
+                if should_logout:
+                     logout_user()
+                     session.clear()
+                     
+                     # Handle API requests with JSON 401
+                     if request.path.startswith('/api/') or request.is_json:
+                         return jsonify({'error': 'ejected', 'message': 'Session terminated'}), 401
+                         
+                     from flask import flash
+                     flash("Votre session a été terminée par un administrateur.", "danger")
+                     return redirect(url_for('auth.login'))
+
+            # 3. Update last active timestamp (Only if NOT ejected)
             current_user.last_active = datetime.utcnow()
             db.session.commit()
 
     # Inject CompanyInfo globally for templates (Theme, Logo, etc.)
+    @app.before_request
+    def check_ejection():
+        if current_user.is_authenticated and current_user.force_logout_at:
+            login_at = session.get('login_at')
+            # If login time is unknown OR login happened BEFORE the force logout
+            if not login_at:
+                 from flask_login import logout_user
+                 logout_user()
+                 session.clear()
+                 flash("Votre session a été terminée par un administrateur.", "danger")
+                 return redirect(url_for('auth.login'))
+                 
+            # Handle string (serialized) vs datetime
+            if isinstance(login_at, str):
+                try:
+                    # Attempt parse if it became a string in session
+                    login_at = datetime.strptime(login_at, '%a, %d %b %Y %H:%M:%S %Z')
+                except:
+                    pass
+
+            if isinstance(login_at, datetime):
+                # Ensure we compare apples to apples (remove timezone if any)
+                login_at_naive = login_at.replace(tzinfo=None)
+                force_logout_naive = current_user.force_logout_at.replace(tzinfo=None)
+                
+                if login_at_naive < force_logout_naive:
+                     from flask_login import logout_user
+                     logout_user()
+                     session.clear()
+                     
+                     # Handle API requests with JSON 401
+                     if request.path.startswith('/api/') or request.is_json:
+                         return jsonify({'error': 'ejected', 'message': 'Session terminated'}), 401
+                         
+                     flash("Votre session a été terminée par un administrateur.", "danger")
+                     return redirect(url_for('auth.login'))
+                 
     @app.context_processor
     def inject_global_data():
         from models import CompanyInfo, AISettings

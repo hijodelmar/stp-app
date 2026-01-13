@@ -3,7 +3,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required
 from werkzeug.utils import secure_filename
 from extensions import db
-from models import CompanyInfo, AISettings
+from models import CompanyInfo, AISettings, User
 from forms import CompanyInfoForm
 from utils.auth import role_required
 
@@ -19,6 +19,7 @@ def index():
         db.session.add(info)
         db.session.commit()
     
+    users = User.query.all()
     ai_settings = AISettings.get_settings()
     form = CompanyInfoForm(obj=info)
     
@@ -51,7 +52,7 @@ def index():
             flash('Paramètres société mis à jour.', 'success')
             return redirect(url_for('settings.index'))
 
-    return render_template('settings/settings.html', form=form, info=info, ai_settings=ai_settings)
+    return render_template('settings/settings.html', form=form, info=info, ai_settings=ai_settings, users=users)
 
 @bp.route('/template_editor')
 @login_required

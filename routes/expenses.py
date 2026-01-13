@@ -11,6 +11,7 @@ bp = Blueprint('expenses', __name__)
 
 @bp.route('/stats-data')
 @login_required
+@role_required(['access_expenses'])
 def stats_data():
     # Data for Pie Chart (By Category)
     category_stats = db.session.query(
@@ -53,6 +54,7 @@ def stats_data():
 
 @bp.route('/export/excel')
 @login_required
+@role_required(['access_expenses'])
 def export_excel():
     import openpyxl
     from openpyxl.styles import Font, Alignment, PatternFill
@@ -137,6 +139,7 @@ def export_excel():
 
 @bp.route('/export/print')
 @login_required
+@role_required(['access_expenses'])
 def print_view():
     search = request.args.get('search', '')
     category = request.args.get('category', '')
@@ -166,6 +169,7 @@ def print_view():
 
 @bp.route('/duplicate/<int:id>')
 @login_required
+@role_required(['access_expenses'])
 def duplicate(id):
     original = Expense.query.get_or_404(id)
     if original.created_by_id != current_user.id:
@@ -196,11 +200,13 @@ def allowed_file(filename):
 
 @bp.route('/receipts/<path:filename>')
 @login_required
+@role_required(['access_expenses'])
 def get_receipt(filename):
     return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
 
 @bp.route('/')
 @login_required
+@role_required(['access_expenses'])
 def index():
     # Filters
     month = request.args.get('month', datetime.now().month, type=int)
@@ -232,6 +238,7 @@ def index():
 
 @bp.route('/add', methods=['GET', 'POST'])
 @login_required
+@role_required(['access_expenses'])
 def add():
     suppliers = Supplier.query.order_by(Supplier.raison_sociale).all()
     
@@ -370,6 +377,7 @@ def add():
 
 @bp.route('/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
+@role_required(['access_expenses'])
 def edit(id):
     expense = Expense.query.get_or_404(id)
     suppliers = Supplier.query.order_by(Supplier.raison_sociale).all()
@@ -424,6 +432,7 @@ def edit(id):
 
 @bp.route('/delete_attachment/<int:id>', methods=['POST'])
 @login_required
+@role_required(['access_expenses'])
 def delete_attachment(id):
     from models import ExpenseAttachment
     attachment = ExpenseAttachment.query.get_or_404(id)
@@ -453,6 +462,7 @@ def delete_attachment(id):
 
 @bp.route('/delete/<int:id>', methods=['POST'])
 @login_required
+@role_required(['access_expenses'])
 def delete(id):
     expense = Expense.query.get_or_404(id)
     
@@ -478,3 +488,53 @@ def delete(id):
     db.session.commit()
     flash('Dépense supprimée.', 'success')
     return redirect(url_for('expenses.index'))
+
+@bp.route('/scan', methods=['POST'])
+@login_required
+@role_required(['access_expenses'])
+def scan_receipt():
+    print("DEBUG: /scan route hit")
+    if 'proof' not in request.files:
+        print("DEBUG: No proof file in request")
+        return jsonify({'success': False, 'error': 'Aucun fichier reçu'}), 400
+        
+    file = request.files['proof']
+    print(f"DEBUG: File received: {file.filename}")
+    if file.filename == '':
+        return jsonify({'success': False, 'error': 'Nom de fichier vide'}), 400
+        
+    if file and allowed_file(file.filename):
+        try:
+            # Save temporarily
+            filename = secure_filename(f"temp_scan_{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}")
+            abs_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'temp', filename)
+            os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+            file.save(abs_path)
+            print(f"DEBUG: File saved to {abs_path}")
+            
+            # Run OCR
+            print("DEBUG: Calling extract_expense_data...")
+            from utils.ocr import extract_expense_data
+            data = extract_expense_data(abs_path)
+            print(f"DEBUG: OCR Data result: {data}")
+            
+            # Clean up temp file
+            try:
+                os.remove(abs_path)
+            except:
+                pass
+                
+            # Convert date format dd/mm/yyyy to yyyy-mm-dd for input[type=date]
+            if data.get('date'):
+                try:
+                    d_obj = datetime.strptime(data['date'], '%d/%m/%Y')
+                    data['date'] = d_obj.strftime('%Y-%m-%d')
+                except:
+                    data['date'] = None
+            
+            return jsonify({'success': True, 'data': data})
+            
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
+            
+    return jsonify({'success': False, 'error': 'Fichier invalide'}), 400

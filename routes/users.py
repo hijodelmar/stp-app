@@ -10,8 +10,8 @@ bp = Blueprint('users', __name__)
 @login_required
 @role_required(['admin', 'user_admin'])
 def index():
-    users = User.query.all()
-    return render_template('users/index.html', users=users)
+    # Redirect to the consolidated settings page
+    return redirect(url_for('settings.index', tab='user_management'))
 
 @bp.route('/add', methods=['GET', 'POST'])
 @login_required

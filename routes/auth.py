@@ -30,6 +30,7 @@ def login():
             db.session.commit()
             
             session['sid'] = new_sid
+            session['login_at'] = datetime.utcnow() # Track connection time
             login_user(user)
             next_page = request.args.get('next')
             return redirect(next_page or url_for('index'))
@@ -70,3 +71,49 @@ def logout():
     logout_user()
     flash('Vous avez été déconnecté.', 'info')
     return redirect(url_for('auth.login'))
+
+@bp.route('/active_users')
+@login_required
+def active_users():
+    # Only admin can view functionality
+    if not current_user.has_role('admin'):
+        flash("Accès refusé.", "danger")
+        return redirect(url_for('index'))
+        
+    # Users active in the last 5 minutes (Real-time view)
+    cutoff = datetime.utcnow() - timedelta(minutes=5)
+    
+    # Filter users who are active AND not ejected after their last activity
+    # (Though logic should clear last_active, this is double safety)
+    users = User.query.filter(User.last_active >= cutoff).all()
+    
+    # Post-filter to remove any zombies that might remain (optional but safe)
+    valid_users = []
+    for u in users:
+        # If user has a force_logout_at that is NEWER than their last_active, they are effectively offline
+        if u.force_logout_at and u.last_active and u.force_logout_at > u.last_active:
+            continue
+        valid_users.append(u)
+    
+    return render_template('auth/active_users.html', users=valid_users, now=datetime.utcnow())
+
+@bp.route('/eject_user/<int:user_id>', methods=['POST'])
+@login_required
+def eject_user(user_id):
+    if not current_user.has_role('admin'):
+        flash("Accès refusé.", "danger")
+        return redirect(url_for('index'))
+    
+    user = User.query.get_or_404(user_id)
+    if user.id == current_user.id:
+        flash("Vous ne pouvez pas vous éjecter vous-même.", "warning")
+        return redirect(url_for('auth.active_users'))
+        
+    # Invalidate their session by timestamp
+    user.force_logout_at = datetime.utcnow()
+    user.last_active = None # Remove from active list immediately check
+    user.current_session_id = None
+    db.session.commit()
+    
+    flash(f"L'utilisateur {user.username} a été déconnecté.", "success")
+    return redirect(url_for('auth.active_users'))

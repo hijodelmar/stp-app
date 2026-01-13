@@ -26,6 +26,7 @@ class User(UserMixin, db.Model):
     
     last_active = db.Column(db.DateTime)
     current_session_id = db.Column(db.String(36))
+    force_logout_at = db.Column(db.DateTime, nullable=True) # Timestamp before which all sessions are invalid
     
     # Relation vers les rôles multiples
     roles = db.relationship('Role', secondary=user_roles, lazy='subquery',
@@ -137,6 +138,9 @@ class Document(db.Model):
     source_document_id = db.Column(db.Integer, db.ForeignKey('document.id'), nullable=True)
     source_document = db.relationship('Document', remote_side=[id], backref='generated_documents')
     
+    # Token de sécurité pour vérification publique (QR Code)
+    secure_token = db.Column(db.String(36), unique=True, nullable=True)
+    
     # Relation avec les lignes
     lignes = db.relationship('LigneDocument', backref='document', lazy=True, cascade="all, delete-orphan")
 
@@ -176,7 +180,7 @@ class LigneDocument(db.Model):
     document_id = db.Column(db.Integer, db.ForeignKey('document.id'), nullable=False)
     
     designation = db.Column(db.String(200), nullable=False)
-    quantite = db.Column(db.Integer, default=1)
+    quantite = db.Column(db.Float, default=1.0)
     prix_unitaire = db.Column(db.Float, default=0.0)
     total_ligne = db.Column(db.Float, default=0.0)
     category = db.Column(db.String(20), default='fourniture') # 'prestation', 'main_doeuvre', 'fourniture'

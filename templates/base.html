@@ -81,7 +81,7 @@
                     </li>
                     {% endif %}
 
-                    {% if current_user.has_any_role(['admin', 'manager', 'facture_admin']) %}
+                    {% if current_user.has_any_role(['access_expenses']) %}
                     <li class="nav-item">
                         <a class="nav-link text-warning" href="{{ url_for('expenses.index') }}">
                             <span class="fa-stack" style="font-size: 0.8em;">
@@ -101,12 +101,7 @@
                     </li>
                     {% endif %}
 
-                    {% if current_user.has_any_role(['admin', 'user_admin']) %}
-                    <li class="nav-item">
-                        <a class="nav-link text-warning" href="{{ url_for('users.index') }}"><i
-                                class="fas fa-user-shield me-1"></i> Utilisateurs</a>
-                    </li>
-                    {% endif %}
+
 
                     <!-- Active Users Live Badge with Dropdown -->
                     <li class="nav-item dropdown d-flex align-items-center ms-lg-2 my-2 my-lg-0" id="activeUsersNav">
@@ -221,8 +216,20 @@
 
         function pollActiveUsers() {
             fetch('{{ url_for("active_users_api") }}')
-                .then(response => response.json())
+                .then(response => {
+                    if (response.status === 401) {
+                        // User ejected or session expired
+                        showNotification('Vous', 'ejection');
+                        // Wait 3 seconds then reload to show login page
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 3000);
+                        return null;
+                    }
+                    return response.json();
+                })
                 .then(data => {
+                    if (!data) return; // Handle void return from 401 check
                     // Update counter
                     const countElem = document.getElementById('activeUsersCount');
                     if (countElem) countElem.innerText = data.count;
@@ -280,6 +287,10 @@
                     headerElem.className = "toast-header bg-success text-white";
                     titleElem.innerText = "Connexion";
                     messageElem.innerHTML = `<i class="fas fa-user-plus me-2"></i> L'utilisateur <strong>${username}</strong> est maintenant en ligne.`;
+                } else if (type === 'ejection') {
+                    headerElem.className = "toast-header bg-danger text-white";
+                    titleElem.innerText = "Session Terminée";
+                    messageElem.innerHTML = `<i class="fas fa-ban me-2"></i> <strong>Votre session a été fermée par un administrateur.</strong><br>Redirection en cours...`;
                 } else {
                     headerElem.className = "toast-header bg-secondary text-white";
                     titleElem.innerText = "Déconnexion";

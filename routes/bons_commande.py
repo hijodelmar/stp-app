@@ -100,6 +100,10 @@ def edit(id):
         form.date.data = document.date.strftime('%Y-%m-%d')
 
     if form.validate_on_submit():
+        # Supprimer l'ancien PDF pour régénération
+        from services.pdf_generator import delete_old_pdf
+        delete_old_pdf(document)
+
         document.date = datetime.strptime(form.date.data, '%Y-%m-%d')
         document.supplier_id = form.supplier_id.data
         document.autoliquidation = form.autoliquidation.data

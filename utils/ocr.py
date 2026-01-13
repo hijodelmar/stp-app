@@ -1,84 +1,69 @@
-import pytesseract
-from PIL import Image
+from services.ai_agent import GoogleProvider
+from models import AISettings
+import json
 import re
-from datetime import datetime
-
-# Windows path configuration (Common default, but might need adjustment)
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 def extract_expense_data(image_path):
     """
-    Extracts date, amount, VAT, HT, and category from an image.
-    Returns a dict with found values.
+    Extracts expense data using AI (Gemini) instead of regex.
+    Returns a dict with: date, amount_ttc, tva, amount_ht, category, description, supplier.
     """
+    print(f"AI OCR: Processing {image_path}...")
+    
+    settings = AISettings.get_settings()
+    if not settings.enabled:
+        return {"error": "AI is disabled in settings"}
+        
+    if settings.provider != 'google':
+         # OpenAI vision not implemented yet in this simplified provider, easy to add if needed
+         return {"error": "Only Google Gemini is supported for OCR currently."}
+
     try:
-        text = pytesseract.image_to_string(Image.open(image_path))
+        provider = GoogleProvider(settings.api_key, settings.model_name)
+        
+        prompt = """
+        Tu es un expert comptable. Analyse cette image de ticket de caisse / facture.
+        Extrais les informations suivantes au format JSON UNIQUEMENT (pas de markdown) :
+        {
+            "date": "dd/mm/yyyy", (La date du ticket)
+            "amount_ttc": 0.00, (Le montant total à payer)
+            "tva": 0.00, (Le montant total de la TVA)
+            "amount_ht": 0.00, (Le montant HT, ou TTC - TVA)
+            "category": "string", (choisis une des catégories : restaurant, transport, material, urssaf, salary, other)
+            "description": "string", (Nom du commerçant + brève description ex: 'Restaurant Le Saes', 'Total Station Essence')
+            "supplier": "string" (Nom du fournisseur/commerçant seul)
+        }
+        
+        Règles pour la catégorie :
+        - restaurant : repas, bar, hotel
+        - transport : essence, peage, taxi, train, avion, parking
+        - material : bricolage, fournitures bureau, informatique, materiel
+        - urssaf : charges sociales
+        - salary : salaire
+        - other : tout le reste
+        
+        Si une valeur est introuvable, mets null.
+        Réponds uniquement avec le JSON valide.
+        """
+        
+        response_text = provider.generate_with_image(prompt, image_path)
+        print(f"AI OCR Raw Response: {response_text}")
+        
+        # Clean markdown
+        response_text = response_text.replace('```json', '').replace('```', '').strip()
+        
+        data = json.loads(response_text)
+        
+        # Ensure numbers are floats (AI sometimes returns strings)
+        for field in ['amount_ttc', 'tva', 'amount_ht']:
+            if data.get(field):
+                try:
+                    data[field] = float(data[field])
+                except:
+                    data[field] = 0.0
+        
+        return data
+
     except Exception as e:
-        print(f"OCR Failed: {e}")
-        return {}
-
-    data = {
-        'date': None,
-        'amount_ttc': None,
-        'tva': None,
-        'amount_ht': None,
-        'category': 'other',
-        'supplier': None
-    }
-    
-    # 1. Date Extraction (DD/MM/YYYY or DD-MM-YYYY)
-    date_match = re.search(r'(\d{2})[/-](\d{2})[/-](\d{4})', text)
-    if date_match:
-        try:
-            day, month, year = date_match.groups()
-            data['date'] = f"{day}/{month}/{year}" # Return as string for form consumption
-        except:
-            pass
-            
-    # 2. Amount Extraction (Look for largest number with currency or "Total")
-    # Finds pattern like 12.50 or 12,50
-    amounts = re.findall(r'(\d+[.,]\d{2})(?:\s?€)?', text)
-    if amounts:
-        # Normalize and convert to floats
-        valid_amounts = []
-        for amt in amounts:
-            try:
-                val = float(amt.replace(',', '.'))
-                valid_amounts.append(val)
-            except:
-                pass
-        if valid_amounts:
-            data['amount_ttc'] = max(valid_amounts) # Assumption: Max amount is Total
-            
-    # 3. TVA Extraction
-    # Look for "TVA" or "%" followed by amount
-    tva_match = re.search(r'(?:TVA|Taxe|Total TVA).*?(\d+[.,]\d{2})', text, re.IGNORECASE)
-    if tva_match:
-         try:
-            data['tva'] = float(tva_match.group(1).replace(',', '.'))
-         except:
-             pass
-             
-    # 4. HT Calculation
-    if data['amount_ttc'] and data['tva']:
-        data['amount_ht'] = round(data['amount_ttc'] - data['tva'], 2)
-    elif data['amount_ttc']:
-        # Fallback: estimate HT if explicit line not found? No, better leave empty.
-        pass
-
-    # 5. Category Detection
-    text_lower = text.lower()
-    keywords = {
-        'restaurant': ['restaurant', 'bar', 'café', 'déjeuner', 'diner', 'mcdo', 'kebab', 'pizza'],
-        'transport': ['uber', 'taxi', 'sncf', 'train', 'essence', 'total', 'peage', 'parking'],
-        'material': ['amazon', 'fnac', 'bureau', 'informatique', 'leroy', 'castorama'],
-        'urssaf': ['urssaf'],
-        'salary': ['salaire', 'paie']
-    }
-    
-    for cat, words in keywords.items():
-        if any(word in text_lower for word in words):
-            data['category'] = cat
-            break
-            
-    return data
+        print(f"AI OCR Error: {e}")
+        return {"error": str(e)}
