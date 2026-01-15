@@ -1,26 +1,85 @@
 import os
-from flask import render_template, current_app
+from flask import render_template, current_app, url_for
 from xhtml2pdf import pisa
 from models import CompanyInfo
 from extensions import db
 from io import BytesIO
+import qrcode
+import base64
+import uuid
+
+def ensure_document_token(document):
+    """
+    Assure que le document a un token sécurisé.
+    Si non, en génère un et le sauvegarde silencieusement.
+    """
+    if not document.secure_token:
+        # Capture timestamp
+        original_updated = document.updated_at 
+        
+        document.secure_token = str(uuid.uuid4())
+        db.session.commit()
+        
+        # Restore timestamp if changed to avoid "updated" status change
+        if document.updated_at != original_updated:
+            document.updated_at = original_updated
+            db.session.commit()
+
+def generate_qr_code_b64(document):
+    """
+    Génère le QR code pour un document et retourne la chaîne base64.
+    """
+    # Ensure token exists
+    ensure_document_token(document)
+    
+    # Generate link
+    verify_url = url_for('public.verify', token=document.secure_token, _external=True)
+    
+    # Make QR
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(verify_url)
+    qr.make(fit=True)
+    
+    img = qr.make_image(fill_color="black", back_color="white")
+    buffered = BytesIO()
+    img.save(buffered, format="PNG")
+    return base64.b64encode(buffered.getvalue()).decode("utf-8")
+
+def _get_common_context(document):
+    """
+    Helper to get common context for PDF rendering
+    """
+    company_info = CompanyInfo.query.first()
+    static_root = os.path.join(current_app.root_path, 'static')
+    logo_abs_path = ""
+    if company_info and company_info.logo_path:
+        logo_abs_path = os.path.join(static_root, company_info.logo_path)
+    
+    # QR Code for all docs
+    qr_code_b64 = generate_qr_code_b64(document)
+    
+    return {
+        'document': document,
+        'info': company_info,
+        'logo_abs_path': logo_abs_path,
+        'qr_code_b64': qr_code_b64
+    }
 
 def generate_pdf_bytes(document):
     """
     Génère le PDF pour un document donné et retourne les octets (bytes).
+    Utilisé pour l'envoi par email.
     """
     try:
-        company_info = CompanyInfo.query.first()
-        static_root = os.path.join(current_app.root_path, 'static')
-        logo_abs_path = ""
-        if company_info and company_info.logo_path:
-            logo_abs_path = os.path.join(static_root, company_info.logo_path)
+        context = _get_common_context(document)
         
         # Render HTML template
-        html_string = render_template('pdf_template.html', 
-                                    document=document, 
-                                    info=company_info,
-                                    logo_abs_path=logo_abs_path)
+        html_string = render_template('pdf_template.html', **context)
         
         # Generate PDF
         pdf_buffer = BytesIO()
@@ -39,63 +98,13 @@ def generate_pdf(document):
     """
     Génère le PDF pour un document donné et l'enregistre.
     Retourne le nom du fichier.
+    Utilisé pour l'affichage/téléchargement.
     """
     try:
-        # Récupérer les infos société
-        company_info = CompanyInfo.query.first()
-            
-        # RELIABLE PATH: Resolve the absolute path to the logo file
-        static_root = os.path.join(current_app.root_path, 'static')
-        logo_abs_path = ""
-        if company_info and company_info.logo_path:
-            logo_abs_path = os.path.join(static_root, company_info.logo_path)
-            
-        # QR Code Generation (Skip for Bon de Commande)
-        import qrcode
-        import base64
-        from io import BytesIO
-        from flask import url_for
-        import uuid
-        
-        # QR Code Generation (Enabled for ALL documents)
-        qr_code_b64 = None
-        
-        # Ensure token exists (Silent Update)
-        if not document.secure_token:
-            original_updated = document.updated_at # Capture timestamp
-            document.secure_token = str(uuid.uuid4())
-            db.session.commit()
-            
-            # Restore timestamp if changed
-            if document.updated_at != original_updated:
-                document.updated_at = original_updated
-                db.session.commit()
-            
-        # Generate link
-        verify_url = url_for('public.verify', token=document.secure_token, _external=True)
-        
-        # Make QR
-        qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=10,
-            border=4,
-        )
-        qr.add_data(verify_url)
-        qr.make(fit=True)
-        
-        img = qr.make_image(fill_color="black", back_color="white")
-        buffered = BytesIO()
-        img.save(buffered, format="PNG")
-        qr_code_b64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
-        print(f"DEBUG: QR Code Generated. Length: {len(qr_code_b64)}")
+        context = _get_common_context(document)
         
         # Rendu du template HTML
-        html_string = render_template('pdf_template.html', 
-                                    document=document, 
-                                    info=company_info,
-                                    logo_abs_path=logo_abs_path,
-                                    qr_code_b64=qr_code_b64)
+        html_string = render_template('pdf_template.html', **context)
         
         # Filename
         filename = f"{document.numero}.pdf"
