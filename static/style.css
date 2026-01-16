@@ -869,10 +869,12 @@ body {
     border-top-color: rgba(255, 255, 255, 0.08) !important;
     backdrop-filter: blur(10px);
 }
+
 /* FANTITA: AI Agent Overrides (White Theme) */
 [data-theme='fantita'] #chat-toggle-btn {
     background-color: #ffffff !important;
-    color: #0B0C15 !important; /* Dark icon */
+    color: #0B0C15 !important;
+    /* Dark icon */
     box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
 }
 
@@ -898,7 +900,8 @@ body {
 }
 
 [data-theme='fantita'] #chat-box {
-    background-color: #151725 !important; /* Dark container */
+    background-color: #151725 !important;
+    /* Dark container */
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -945,4 +948,59 @@ body {
 
 [data-theme='fantita'] .btn-light:hover {
     background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* FANTITA: Specific Dropdown & Input Fixes */
+[data-theme='fantita'] .dropdown-menu {
+    background-color: #151725;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme='fantita'] .dropdown-item {
+    color: #e0e0e0;
+}
+
+[data-theme='fantita'] .dropdown-item:hover,
+[data-theme='fantita'] .dropdown-item:focus {
+    background-color: rgba(108, 99, 255, 0.2);
+    color: #ffffff;
+}
+
+[data-theme='fantita'] .dropdown-item-text {
+    color: #adb5bd !important;
+    /* Ensure readable light grey */
+}
+
+/* Force dark background for form inputs to prevent white-on-white */
+[data-theme='fantita'] .form-control,
+[data-theme='fantita'] .form-select {
+    background-color: #1a1c2e;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+[data-theme='fantita'] .form-control:focus,
+[data-theme='fantita'] .form-select:focus {
+    background-color: #202235;
+    border-color: #6C63FF;
+    color: #ffffff;
+    box-shadow: 0 0 0 0.25rem rgba(108, 99, 255, 0.25);
+}
+
+[data-theme='fantita'] .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+/* Ensure select options are dark */
+[data-theme='fantita'] .form-select option {
+    background-color: #151725;
+    color: #ffffff;
+}
+
+/* Fix input groups text */
+[data-theme='fantita'] .input-group-text {
+    background-color: #2a2c40;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
 }
