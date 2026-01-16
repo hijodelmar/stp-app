@@ -99,10 +99,11 @@ class CompanyInfoForm(FlaskForm):
     
     # Theme
     theme = SelectField('Thème de l\'interface', choices=[
+        ('fantita', 'FANTITA (Premium Dark)'),
         ('default', 'STP Classique (Bleu/Or)'),
         ('dark', 'Mode Sombre / Nuit'),
         ('ocean', 'Océan (Teintes Cyan/Bleu)')
-    ], default='default')
+    ], default='fantita')
     brand_icon = StringField('Icône de la barre de navigation', default='fas fa-tools')
     
     submit = SubmitField('Enregistrer')
