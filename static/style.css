@@ -921,3 +921,28 @@ body {
     color: #ffffff !important;
 }
 
+
+/* FANTITA: Fix for specific Bootstrap text utilities */
+[data-theme='fantita'] .text-dark {
+    color: #ffffff !important;
+}
+
+/* FANTITA: Fix AI Header Text Inheritance */
+[data-theme='fantita'] .chat-header * {
+    color: inherit !important;
+}
+
+/* FANTITA: Restore correct text color for warning buttons */
+[data-theme='fantita'] .btn-warning {
+    color: #212529 !important;
+}
+
+[data-theme='fantita'] .btn-light {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white !important;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+[data-theme='fantita'] .btn-light:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}

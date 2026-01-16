@@ -4,7 +4,7 @@
 <div class="row justify-content-center">
     <div class="col-md-8 col-lg-6">
         <div class="card border-0 shadow-lg">
-            <div class="card-header bg-white border-0 py-3">
+            <div class="card-header bg-card-header border-0 py-3">
                 <h4 class="mb-0 fw-bold">
                     {% if expense %}
                     Modifier la Dépense
@@ -18,7 +18,7 @@
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                     <!-- 1. Justificatif (Highlight on Mobile) -->
-                    <div class="mb-4 text-center p-4 bg-light rounded border border-dashed">
+                    <div class="mb-4 text-center p-4 bg-card-header rounded border border-dashed">
                         <label for="proof" class="form-label fw-bold d-block mb-2">Scanner le(s) Ticket(s)</label>
                         <input type="file" class="form-control d-none" id="proof" name="proof"
                             accept="image/*,application/pdf" multiple onchange="previewFiles()">
