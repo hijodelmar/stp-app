@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-theme="{{ company_info.theme if company_info else 'default' }}">
+<html lang="fr" data-theme="{{ company_info.theme if company_info and company_info.theme else 'fantita' }}">
 
 <head>
     <meta charset="UTF-8">
@@ -181,7 +181,7 @@
         {% endblock %}
     </div>
 
-    <footer class="footer mt-auto py-3 bg-light text-center border-top">
+    <footer class="footer mt-auto py-3 bg-custom-footer text-center border-top">
         <div class="container">
             <span class="text-muted">© 2025 STP - Service Température Plomberie <br> <small>Webmaster : Omar
                     Bradai</small></span>

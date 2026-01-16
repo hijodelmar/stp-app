@@ -4,16 +4,16 @@
 <div class="row justify-content-center">
     <div class="col-md-10">
         <div class="card shadow">
-            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <div class="card-header bg-card-header d-flex justify-content-between align-items-center">
                 <h3 class="mb-0">{{ title }}</h3>
-                <a href="{{ url_for('factures.index') }}" class="btn btn-outline-light btn-sm">Retour</a>
+                <a href="{{ url_for('factures.index') }}" class="btn btn-outline-secondary btn-sm">Retour</a>
             </div>
             <div class="card-body">
                 <form method="POST" action="" id="facture-form">
                     {{ form.hidden_tag() }}
 
                     <div class="card mb-4">
-                        <div class="card-header bg-light">Informations Client</div>
+                        <div class="card-header bg-card-header">Informations Client</div>
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
@@ -131,7 +131,7 @@
             </div>
 
             <div class="card mb-4">
-                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <div class="card-header bg-card-header d-flex justify-content-between align-items-center">
                     <span>Lignes du document</span>
                     {% if not title.startswith('Modifier Avoir') %}
                     <button type="button" class="btn btn-sm btn-success" id="add-line">

@@ -75,7 +75,7 @@
 
                     <div class="card mb-4">
                         <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                            <span>Articles Ã  commander</span>
+                            <span>Articles à commander</span>
                             <button type="button" class="btn btn-sm btn-success" id="add-line">
                                 <i class="fas fa-plus"></i> Ajouter une ligne
                             </button>
@@ -162,11 +162,12 @@
         if (tvaRateInput) {
             tvaRateInput.addEventListener('input', calculateTotals);
         }
-        
+
         const container = document.getElementById('lignes-container');
         const addButton = document.getElementById('add-line');
         const template = document.getElementById('ligne-template').innerHTML;
-        let lineIndex = {{ form.lignes|length }};
+        let lineIndex = {{ form.lignes| length
+    }};
 
     if (addButton && container) {
         addButton.addEventListener('click', function () {

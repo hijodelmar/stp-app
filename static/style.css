@@ -48,6 +48,51 @@
     --warning-bg: #fffde7;
 }
 
+[data-theme="fantita"] {
+    /* FANTITA Premium Dark Theme */
+    --primary-color: #6C63FF;
+    /* Electric Indigo */
+    --secondary-color: #00E5FF;
+    /* Neon Cyan */
+    --navbar-bg: rgba(21, 23, 37, 0.95);
+    /* Deep midnight glass */
+    --bg-color: #0B0C15;
+    /* Deep Void */
+    --text-color: #ffffff;
+    /* Pure White for Clarity */
+    --card-bg: #151725;
+    /* Midnight Surface */
+    --border-color: rgba(255, 255, 255, 0.08);
+    --info-bg: rgba(108, 99, 255, 0.1);
+    --success-bg: rgba(0, 229, 255, 0.1);
+    --warning-bg: rgba(255, 215, 0, 0.1);
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.6);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* FANTITA Utility Classes */
+.glass-effect {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: linear-gradient(145deg, rgba(21, 23, 37, 0.6), rgba(11, 12, 21, 0.4));
+    border: var(--glass-border, 1px solid rgba(255, 255, 255, 0.05));
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.neon-glow {
+    box-shadow: 0 0 10px rgba(108, 99, 255, 0.4), 0 0 20px rgba(108, 99, 255, 0.2);
+}
+
+.text-gradient {
+    background: linear-gradient(90deg, #6C63FF, #00E5FF);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+}
+
 /* Base Styles */
 body {
     font-family: 'Outfit', sans-serif;
@@ -357,8 +402,79 @@ body {
     color: #ccc;
 }
 
+[data-theme="fantita"] .form-control,
+[data-theme="fantita"] .form-select,
+[data-theme="fantita"] .input-group-text {
+    background-color: #050510;
+    /* Very dark, almost black */
+    border-color: rgba(255, 255, 255, 0.3);
+    /* Brighter border */
+    color: #ffffff !important;
+}
+
+[data-theme="fantita"] .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.8) !important;
+    opacity: 1;
+    /* Firefox override */
+}
+
+[data-theme="fantita"] .form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(108, 99, 255, 0.25);
+}
+
 [data-theme="dark"] .table {
     color: var(--text-color);
+}
+
+[data-theme="fantita"] .table {
+    color: var(--text-color);
+    --bs-table-bg: transparent;
+    --bs-table-hover-bg: rgba(255, 255, 255, 0.05);
+    --bs-table-border-color: rgba(255, 255, 255, 0.05);
+}
+
+/* FANTITA Login Overrides */
+[data-theme="fantita"] .login-body {
+    background: radial-gradient(circle at top right, #1a1c2e, #0B0C15 60%);
+    animation: none;
+    /* Disable the blue gradient animation */
+}
+
+[data-theme="fantita"] .login-card {
+    background: rgba(21, 23, 37, 0.7);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+[data-theme="fantita"] .login-icon-circle {
+    background: #151725;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 15px rgba(108, 99, 255, 0.5);
+}
+
+[data-theme="fantita"] .login-btn {
+    background: linear-gradient(135deg, var(--primary-color), #4e44cc);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 15px rgba(108, 99, 255, 0.4);
+}
+
+[data-theme="fantita"] .login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(108, 99, 255, 0.6);
+}
+
+/* FANTITA Card Overrides */
+[data-theme="fantita"] .card {
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    background: linear-gradient(180deg, rgba(21, 23, 37, 0.8) 0%, rgba(11, 12, 21, 0.9) 100%);
+}
+
+[data-theme="fantita"] .card:hover {
+    border-color: rgba(108, 99, 255, 0.3) !important;
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
 }
 
 /* Editor Responsive Layout */
@@ -372,3 +488,436 @@ body {
         height: calc(100vh - 200px);
     }
 }
+
+/* Dashboard Utility Classes (Replacing Inline Styles) */
+.btn-dashboard-new {
+    background-color: var(--primary-color);
+    color: white;
+    border: 2px solid var(--primary-color);
+    border-radius: 8px;
+}
+
+.btn-dashboard-action {
+    background-color: var(--secondary-color);
+    color: #002366;
+    border: 2px solid var(--secondary-color);
+    border-radius: 8px;
+}
+
+[data-theme="fantita"] .btn-dashboard-action {
+    color: #0B0C15;
+    /* Dark text for contrast on neon cyan */
+}
+
+/* Stat Card Borders */
+.stat-card-border-primary {
+    border-left: 4px solid #002366 !important;
+}
+
+.stat-card-border-danger {
+    border-left: 4px solid #f44336 !important;
+}
+
+.stat-card-border-success {
+    border-left: 4px solid #10b981 !important;
+}
+
+.stat-card-border-darksuccess {
+    border-left: 4px solid #2e7d32 !important;
+}
+
+.stat-card-border-teal {
+    border-left: 4px solid #00695c !important;
+}
+
+.stat-card-border-blue {
+    border-left: 4px solid #1976d2 !important;
+}
+
+.stat-card-border-dark {
+    border-left: 4px solid #333 !important;
+}
+
+/* Stat Icons */
+.stat-icon-primary {
+    background-color: rgba(0, 35, 102, 0.1);
+    color: #002366;
+}
+
+.stat-icon-danger {
+    background-color: rgba(244, 67, 54, 0.1);
+    color: #f44336;
+}
+
+.stat-icon-success {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.stat-icon-darksuccess {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.stat-icon-teal {
+    background-color: #e0f2f1;
+    color: #00695c;
+}
+
+.stat-icon-blue {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.stat-icon-dark {
+    background-color: #eceff1;
+    color: #333;
+}
+
+.stat-icon-info {
+    background-color: #e3f2fd;
+    color: #002366;
+}
+
+.stat-icon-warning {
+    background-color: #fff9c4;
+    color: #D4AF37;
+}
+
+.stat-icon-purple {
+    background-color: #f3e5f5;
+    color: #7b1fa2;
+}
+
+/* FANTITA Dashboard Overrides */
+[data-theme="fantita"] .stat-card-border-primary {
+    border-left-color: #6C63FF !important;
+}
+
+[data-theme="fantita"] .stat-card-border-danger {
+    border-left-color: #FF4081 !important;
+}
+
+[data-theme="fantita"] .stat-card-border-success {
+    border-left-color: #00E5FF !important;
+}
+
+[data-theme="fantita"] .stat-card-border-darksuccess {
+    border-left-color: #00C853 !important;
+}
+
+[data-theme="fantita"] .stat-card-border-teal {
+    border-left-color: #1DE9B6 !important;
+}
+
+[data-theme="fantita"] .stat-card-border-blue {
+    border-left-color: #448AFF !important;
+}
+
+[data-theme="fantita"] .stat-card-border-dark {
+    border-left-color: #B0BEC5 !important;
+}
+
+[data-theme="fantita"] .stat-icon-primary {
+    background-color: rgba(108, 99, 255, 0.15);
+    color: #6C63FF;
+}
+
+[data-theme="fantita"] .stat-icon-danger {
+    background-color: rgba(255, 64, 129, 0.15);
+    color: #FF4081;
+}
+
+[data-theme="fantita"] .stat-icon-success {
+    background-color: rgba(0, 229, 255, 0.15);
+    color: #00E5FF;
+}
+
+[data-theme="fantita"] .stat-icon-darksuccess {
+    background-color: rgba(0, 200, 83, 0.15);
+    color: #69F0AE;
+}
+
+[data-theme="fantita"] .stat-icon-teal {
+    background-color: rgba(29, 233, 182, 0.15);
+    color: #1DE9B6;
+}
+
+[data-theme="fantita"] .stat-icon-blue {
+    background-color: rgba(68, 138, 255, 0.15);
+    color: #448AFF;
+}
+
+[data-theme="fantita"] .stat-icon-dark {
+    background-color: rgba(176, 190, 197, 0.15);
+    color: #CFD8DC;
+}
+
+[data-theme="fantita"] .stat-icon-info {
+    background-color: rgba(64, 196, 255, 0.15);
+    color: #40C4FF;
+}
+
+[data-theme="fantita"] .stat-icon-warning {
+    background-color: rgba(255, 215, 0, 0.15);
+    color: #FFD740;
+}
+
+[data-theme="fantita"] .stat-icon-purple {
+    background-color: rgba(224, 64, 251, 0.15);
+    color: #E040FB;
+}
+
+[data-theme="fantita"] .text-muted {
+    color: #cbd5e1 !important;
+}
+
+/* Lighter muted text */
+[data-theme="fantita"] .btn-dashboard-new {
+    background: linear-gradient(135deg, #6C63FF, #4e44cc);
+    border: none;
+    box-shadow: 0 4px 15px rgba(108, 99, 255, 0.3);
+}
+
+[data-theme="fantita"] .btn-dashboard-action {
+    background: linear-gradient(135deg, #00E5FF, #00B8D4);
+    border: none;
+    box-shadow: 0 4px 15px rgba(0, 229, 255, 0.3);
+}
+
+/* Theme-aware Card Header Background */
+.bg-card-header {
+    background-color: #fff;
+}
+
+[data-theme="fantita"] .bg-card-header {
+    background-color: transparent;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .bg-card-header {
+    background-color: var(--card-bg);
+}
+
+/* FANTITA Button Overrides */
+[data-theme="fantita"] .btn-primary {
+    background: linear-gradient(135deg, var(--primary-color), #4e44cc);
+    border: none;
+    box-shadow: 0 4px 15px rgba(108, 99, 255, 0.3);
+    color: white;
+}
+
+[data-theme="fantita"] .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(108, 99, 255, 0.5);
+}
+
+[data-theme="fantita"] .btn-success {
+    background: linear-gradient(135deg, #00E5FF, #00B8D4);
+    border: none;
+    box-shadow: 0 4px 15px rgba(0, 229, 255, 0.3);
+    color: #0B0C15;
+    font-weight: 600;
+}
+
+[data-theme="fantita"] .btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 229, 255, 0.5);
+}
+
+[data-theme="fantita"] .btn-outline-secondary {
+    border-color: rgba(255, 255, 255, 0.2);
+    color: var(--text-color);
+}
+
+[data-theme="fantita"] .btn-outline-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.4);
+    color: white;
+}
+
+/* FANTITA Modal Overrides */
+[data-theme='fantita'] .modal-content {
+    background-color: #151725;
+    color: var(--text-color);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-theme='fantita'] .modal-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-theme='fantita'] .modal-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-theme='fantita'] .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+
+/* FANTITA Table Header Override for Clarity */
+[data-theme='fantita'] .table thead th {
+    background-color: transparent !important;
+    color: #ffffff;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* FANTITA: Force Pure White Text Globally */
+[data-theme='fantita'] .text-muted,
+[data-theme='fantita'] .text-secondary {
+    color: #ffffff !important;
+}
+
+/* General Elements (No !important to allow overrides) */
+[data-theme='fantita'] td,
+[data-theme='fantita'] p,
+[data-theme='fantita'] span:not(.badge),
+[data-theme='fantita'] div {
+    color: #ffffff;
+}
+
+/* FANTITA: Editor & Preview Override (Force Dark Text on White Backgrounds) */
+[data-theme='fantita'] #editor-container,
+[data-theme='fantita'] #signature-preview {
+    color: #333333;
+}
+
+/* Ensure children inherit dark color */
+[data-theme='fantita'] #editor-container *,
+[data-theme='fantita'] #signature-preview * {
+    color: inherit;
+}
+
+/* Ensure links are also visible */
+[data-theme='fantita'] a:not(.btn) {
+    color: #00E5FF;
+}
+
+[data-theme='fantita'] a:not(.btn):hover {
+    color: #ffffff;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+}
+
+/* FANTITA: The 'Living' Gradient */
+@keyframes livingGradient {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+[data-theme='fantita'] {
+    /* Deep Void + Midnight Purple + Cyber Blue Mesh */
+    background: linear-gradient(-45deg, #0B0C15, #1a1c2e, #0f1020, #150f2e);
+    background-size: 400% 400%;
+    animation: livingGradient 15s ease infinite;
+    min-height: 100vh;
+}
+
+/* FANTITA: Neon Scrollbar */
+[data-theme='fantita'] ::-webkit-scrollbar {
+    width: 10px;
+}
+
+[data-theme='fantita'] ::-webkit-scrollbar-track {
+    background: #0B0C15;
+}
+
+[data-theme='fantita'] ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #6C63FF, #00E5FF);
+    border-radius: 5px;
+    border: 2px solid #0B0C15;
+}
+
+[data-theme='fantita'] ::-webkit-scrollbar-thumb:hover {
+    background: #00E5FF;
+}
+
+/* FANTITA: Interactive Glows */
+[data-theme='fantita'] .card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+[data-theme='fantita'] .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(108, 99, 255, 0.2);
+    border-color: rgba(108, 99, 255, 0.5) !important;
+}
+
+[data-theme='fantita'] .btn:hover {
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+}
+
+/* Custom Footer Styling */
+.bg-custom-footer {
+    background-color: #f8f9fa;
+    /* Default light */
+}
+
+[data-theme='fantita'] .bg-custom-footer {
+    background-color: transparent !important;
+    border-top-color: rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(10px);
+}
+/* FANTITA: AI Agent Overrides (White Theme) */
+[data-theme='fantita'] #chat-toggle-btn {
+    background-color: #ffffff !important;
+    color: #0B0C15 !important; /* Dark icon */
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+}
+
+[data-theme='fantita'] .chat-header {
+    background-color: #ffffff !important;
+    color: #0B0C15 !important;
+}
+
+[data-theme='fantita'] .chat-header button {
+    color: #0B0C15 !important;
+}
+
+[data-theme='fantita'] .message.bot {
+    background-color: #ffffff !important;
+    color: #0B0C15 !important;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+[data-theme='fantita'] .message.user {
+    background-color: rgba(108, 99, 255, 0.2) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(108, 99, 255, 0.3);
+}
+
+[data-theme='fantita'] #chat-box {
+    background-color: #151725 !important; /* Dark container */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='fantita'] .chat-messages {
+    background-color: transparent !important;
+}
+
+[data-theme='fantita'] .chat-input-area {
+    background-color: #151725 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='fantita'] .chat-input-area input {
+    background-color: #050510 !important;
+    color: white !important;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+[data-theme='fantita'] .chat-input-area button {
+    color: #ffffff !important;
+}
+
