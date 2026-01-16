@@ -1,4 +1,5 @@
 from datetime import datetime
+from sqlalchemy import extract
 from flask import Blueprint, render_template, redirect, url_for, flash, request, abort
 from extensions import db
 from models import Document, LigneDocument, Client, CompanyInfo, ClientContact
@@ -15,17 +16,59 @@ bp = Blueprint('devis', __name__)
 @role_required(['admin', 'manager', 'reporting', 'devis_admin'])
 def index():
     q = request.args.get('q')
+    month = request.args.get('month')
+    year = request.args.get('year')
+    
+    now = datetime.now()
+    
+    # Default to current month/year if no filter is provided at all
+    # But if user selected "all" (empty string or 'all'), we strictly respect that later.
+    # Logic: If GET params are missing entirely, set defaults.
+    if month is None and year is None and not q:
+        month = str(now.month)
+        year = str(now.year)
+        
+    query = Document.query.join(Client).filter(Document.type == 'devis')
+
+    # Apply Search
     if q:
         search = f"%{q}%"
-        documents = Document.query.join(Client).filter(
-            (Document.type == 'devis') &
-            ((Document.numero.ilike(search)) |
+        query = query.filter(
+            (Document.numero.ilike(search)) |
             (Client.raison_sociale.ilike(search)) |
-            (db.cast(Document.date, db.String).ilike(search)))
-        ).order_by(Document.updated_at.desc()).all()
-    else:
-        documents = Document.query.filter_by(type='devis').order_by(Document.updated_at.desc()).all()
-    return render_template('devis/index.html', documents=documents)
+            (db.cast(Document.date, db.String).ilike(search))
+        )
+    
+    # Apply Date Filters
+    if month and month != 'all':
+        query = query.filter(extract('month', Document.date) == int(month))
+    
+    if year and year != 'all':
+        query = query.filter(extract('year', Document.date) == int(year))
+
+    documents = query.order_by(Document.updated_at.desc()).all()
+    
+    # Data for filter dropdowns
+    months = [
+        {'value': '1', 'label': 'Janvier'}, {'value': '2', 'label': 'Février'}, 
+        {'value': '3', 'label': 'Mars'}, {'value': '4', 'label': 'Avril'},
+        {'value': '5', 'label': 'Mai'}, {'value': '6', 'label': 'Juin'},
+        {'value': '7', 'label': 'Juillet'}, {'value': '8', 'label': 'Août'},
+        {'value': '9', 'label': 'Septembre'}, {'value': '10', 'label': 'Octobre'},
+        {'value': '11', 'label': 'Novembre'}, {'value': '12', 'label': 'Décembre'}
+    ]
+    
+    # Generate year range: e.g. 5 years back to 1 year future
+    current_year_int = now.year
+    years = range(current_year_int - 5, current_year_int + 2)
+    
+    return render_template('devis/index.html', 
+                           documents=documents, 
+                           months=months, 
+                           years=years, 
+                           selected_month=month if month else 'all', 
+                           selected_year=year if year else 'all',
+                           current_year=current_year_int)
 
 @bp.route('/add', methods=['GET', 'POST'])
 @login_required

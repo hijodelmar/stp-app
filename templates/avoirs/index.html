@@ -13,13 +13,34 @@
 
 <div class="card mb-4">
     <div class="card-body">
-        <form action="{{ url_for('avoirs.index') }}" method="GET" class="d-flex">
-            <input class="form-control me-2" type="search" name="q" placeholder="Rechercher (Numéro, Client)"
-                aria-label="Search" value="{{ request.args.get('q', '') }}">
-            <button class="btn btn-outline-primary" type="submit">Rechercher</button>
-            {% if request.args.get('q') %}
-            <a href="{{ url_for('avoirs.index') }}" class="btn btn-outline-secondary ms-2" title="Effacer"><i
-                    class="fas fa-times"></i></a>
+        <form action="{{ url_for('avoirs.index') }}" method="GET" class="d-flex flex-wrap align-items-center gap-2">
+            <!-- Filter by Month -->
+            <select name="month" class="form-select w-auto" onchange="this.form.submit()">
+                <option value="all" {% if selected_month=='all' %}selected{% endif %}>Tous les mois</option>
+                {% for m in months %}
+                <option value="{{ m.value }}" {% if selected_month==m.value|string %}selected{% endif %}>{{ m.label }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <!-- Filter by Year -->
+            <select name="year" class="form-select w-auto" onchange="this.form.submit()">
+                <option value="all" {% if selected_year=='all' %}selected{% endif %}>Toutes les années</option>
+                {% for y in years %}
+                <option value="{{ y }}" {% if selected_year|string==y|string %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+
+            <!-- Search -->
+            <div class="input-group w-auto">
+                <input class="form-control" type="search" name="q" placeholder="Rechercher..." aria-label="Search"
+                    value="{{ request.args.get('q', '') }}">
+                <button class="btn btn-outline-primary" type="submit"><i class="fas fa-search"></i></button>
+            </div>
+
+            {% if request.args.get('q') or selected_month != 'all' or selected_year != 'all' %}
+            <a href="{{ url_for('avoirs.index') }}" class="btn btn-outline-secondary"
+                title="Réinitialiser les filtres"><i class="fas fa-undo"></i></a>
             {% endif %}
         </form>
     </div>

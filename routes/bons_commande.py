@@ -1,4 +1,5 @@
 from datetime import datetime
+from sqlalchemy import extract
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, abort
 from extensions import db
 from models import Document, LigneDocument, Supplier, CompanyInfo
@@ -14,17 +15,48 @@ bp = Blueprint('bons_commande', __name__)
 @role_required(['admin', 'manager', 'facture_admin', 'supplier_admin'])
 def index():
     q = request.args.get('q')
+    month = request.args.get('month')
+    year = request.args.get('year')
+    now = datetime.now()
+    
+    if month is None and year is None and not q:
+        month = str(now.month)
+        year = str(now.year)
+        
+    query = Document.query.filter(Document.type == 'bon_de_commande')
+
     if q:
         search = f"%{q}%"
-        documents = Document.query.join(Supplier).filter(
-            (Document.type == 'bon_de_commande') &
+        query = query.join(Supplier).filter(
             ((Document.numero.ilike(search)) |
             (Supplier.raison_sociale.ilike(search)) |
             (db.cast(Document.date, db.String).ilike(search)))
-        ).order_by(Document.updated_at.desc()).all()
-    else:
-        documents = Document.query.filter_by(type='bon_de_commande').order_by(Document.updated_at.desc()).all()
-    return render_template('bons_commande/index.html', documents=documents)
+        )
+        
+    if month and month != 'all':
+        query = query.filter(extract('month', Document.date) == int(month))
+    
+    if year and year != 'all':
+        query = query.filter(extract('year', Document.date) == int(year))
+
+    documents = query.order_by(Document.updated_at.desc()).all()
+
+    months = [
+        {'value': '1', 'label': 'Janvier'}, {'value': '2', 'label': 'Février'}, 
+        {'value': '3', 'label': 'Mars'}, {'value': '4', 'label': 'Avril'},
+        {'value': '5', 'label': 'Mai'}, {'value': '6', 'label': 'Juin'},
+        {'value': '7', 'label': 'Juillet'}, {'value': '8', 'label': 'Août'},
+        {'value': '9', 'label': 'Septembre'}, {'value': '10', 'label': 'Octobre'},
+        {'value': '11', 'label': 'Novembre'}, {'value': '12', 'label': 'Décembre'}
+    ]
+    current_year_int = now.year
+    years = range(current_year_int - 5, current_year_int + 2)
+    
+    return render_template('bons_commande/index.html', documents=documents,
+                           months=months, years=years,
+                           selected_month=month if month else 'all',
+                           selected_year=year if year else 'all',
+                           current_year=current_year_int)
 
 @bp.route('/add', methods=['GET', 'POST'])
 @login_required
