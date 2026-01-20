@@ -31,7 +31,7 @@ def create_app(config_class=Config):
             service = BackupService(app)
             service.apply_schedule()
         except Exception as e:
-            pass
+            app.logger.error(f"Startup Schedule Error: {e}")
 
 
     login_manager.login_view = 'auth.login'
