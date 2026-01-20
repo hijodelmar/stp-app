@@ -5,3 +5,7 @@ from flask_wtf.csrf import CSRFProtect
 db = SQLAlchemy()
 login_manager = LoginManager()
 csrf = CSRFProtect()
+
+from flask_apscheduler import APScheduler
+scheduler = APScheduler()
+
