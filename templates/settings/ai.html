@@ -1,0 +1,46 @@
+{% extends 'settings/base_settings.html' %}
+
+{% block settings_content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-robot me-2"></i>Assistant IA</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <input type="hidden" name="ai_settings_submit" value="1">
+                    <div class="form-check form-switch mb-4">
+                        <input class="form-check-input" type="checkbox" id="enabled" name="enabled" {% if
+                            ai_settings.enabled %}checked{% endif %}>
+                        <label class="form-check-label h5 mb-0" for="enabled">Activer l'assistant IA</label>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Fournisseur</label>
+                        <select class="form-select" name="provider">
+                            <option value="google" {% if ai_settings.provider=='google' %}selected{% endif %}>
+                                Google Gemini</option>
+                            <option value="openai" {% if ai_settings.provider=='openai' %}selected{% endif %}>
+                                OpenAI GPT</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Clé API</label>
+                        <input type="password" class="form-control" name="api_key"
+                            value="{{ ai_settings.api_key or '' }}">
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Modèle</label>
+                        <input type="text" class="form-control" name="model_name"
+                            value="{{ ai_settings.model_name or '' }}" placeholder="ex: gemini-1.5-flash">
+                    </div>
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary">Enregistrer les paramètres IA</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

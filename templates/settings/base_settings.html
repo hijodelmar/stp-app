@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-cog me-2"></i>Paramètres</h1>
+    <div>
+        <a href="{{ url_for('settings.template_editor') }}" class="btn btn-warning me-2"><i
+                class="fas fa-paint-brush"></i> Modifier le Template PDF</a>
+        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Retour</a>
+    </div>
+</div>
+
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <a class="nav-link {% if active_page == 'company' %}active{% endif %}"
+            href="{{ url_for('settings.company') }}">Société & Apparence</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if active_page == 'ai' %}active{% endif %}" href="{{ url_for('settings.ai') }}">Assistant
+            IA</a>
+    </li>
+    {% if current_user.has_any_role(['admin']) %}
+    <li class="nav-item">
+        <a class="nav-link {% if active_page == 'backups' %}active{% endif %}"
+            href="{{ url_for('settings.backups') }}">Sauvegardes</a>
+    </li>
+    {% endif %}
+
+    {% if current_user.has_any_role(['admin', 'user_admin']) %}
+    <li class="nav-item">
+        <a class="nav-link {% if active_page == 'security' %}active{% endif %}"
+            href="{{ url_for('settings.security') }}">Sécurité (Sessions)</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if active_page == 'users' %}active{% endif %}"
+            href="{{ url_for('settings.users') }}">Gestion Utilisateurs</a>
+    </li>
+    {% endif %}
+</ul>
+
+<div class="tab-content">
+    {% block settings_content %}{% endblock %}
+</div>
+{% endblock %}

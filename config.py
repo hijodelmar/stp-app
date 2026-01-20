@@ -12,3 +12,10 @@ class Config:
     from datetime import timedelta
     PERMANENT_SESSION_LIFETIME = timedelta(minutes=60)
     SESSION_REFRESH_EACH_REQUEST = True
+    
+    # Backup Configuration
+    BACKUP_FOLDER = os.path.join(basedir, 'backups')
+    SCHEDULER_API_ENABLED = True
+    SCHEDULER_TIMEZONE = "Europe/Paris"
+
+

@@ -19,6 +19,21 @@ def create_app(config_class=Config):
     db.init_app(app)
     login_manager.init_app(app)
     csrf.init_app(app)
+    
+    from extensions import scheduler
+    scheduler.init_app(app)
+    scheduler.start()
+
+    # Load and apply backup schedule
+    with app.app_context():
+        try:
+            from services.backup_service import BackupService
+            service = BackupService(app)
+            service.apply_schedule()
+        except Exception as e:
+            pass
+
+
     login_manager.login_view = 'auth.login'
     login_manager.login_message = "Veuillez vous connecter pour accéder à cette page."
     login_manager.login_message_category = "info"

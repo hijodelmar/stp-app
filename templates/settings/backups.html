@@ -1,0 +1,188 @@
+{% extends 'settings/base_settings.html' %}
+
+{% block settings_content %}
+<div class="row">
+    <div class="col-md-10 mx-auto">
+        <!-- Auto Backup Configuration -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Planification Automatique</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('settings.schedule_backup') }}" method="POST"
+                    class="d-flex align-items-center gap-3">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="backup_enabled" name="enabled" {% if
+                            backup_schedule.enabled %}checked{% endif %}>
+                        <label class="form-check-label" for="backup_enabled">Activer la sauvegarde
+                            quotidienne</label>
+                    </div>
+
+                    <div class="input-group" style="max-width: 170px;">
+                        <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                        <input type="date" class="form-control" name="start_date"
+                            value="{{ backup_schedule.get('start_date', '') }}" placeholder="Date de début">
+                    </div>
+
+                    <div class="input-group" style="max-width: 200px;">
+                        <span class="input-group-text"><i class="fas fa-hourglass-start"></i></span>
+                        <input type="number" class="form-control" name="hour" min="0" max="23"
+                            value="{{ backup_schedule.hour }}" placeholder="HH" aria-label="Heure">
+                        <span class="input-group-text">:</span>
+                        <input type="number" class="form-control" name="minute" min="0" max="59"
+                            value="{{ backup_schedule.minute }}" placeholder="MM" aria-label="Minute">
+                    </div>
+
+
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </form>
+
+                {% if backup_schedule.enabled %}
+                <div class="alert alert-light mt-3 mb-0 border d-flex align-items-center">
+                    <i class="fas fa-info-circle text-primary me-2"></i>
+                    <div>
+                        <strong>Prochaine exécution :</strong>
+                        <span class="badge bg-primary ms-1 text-white">{{ next_run_time or "Calcul en cours..."
+                            }}</span>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="form-text mt-2">
+                    Les sauvegardes sont stockées localement dans le dossier <code>/backups</code>.
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Manual & List -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-card-header">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Gestion des Sauvegardes</h5>
+                    <form action="{{ url_for('settings.create_backup') }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <button type="submit" class="btn btn-sm btn-light">
+                            <i class="fas fa-plus me-1"></i> Créer une sauvegarde maintenant
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Filter Form -->
+                <form method="GET" action="{{ url_for('settings.backups') }}" class="row g-2 align-items-center">
+                    <div class="col-auto">
+                        <label class="visually-hidden">Date début</label>
+                        <input type="date" class="form-control form-control-sm" name="start_date"
+                            value="{{ filters.start_date or '' }}" placeholder="Date début" title="Date de début">
+                    </div>
+                    <div class="col-auto">
+                        <span class="text-white">-</span>
+                    </div>
+                    <div class="col-auto">
+                        <label class="visually-hidden">Date fin</label>
+                        <input type="date" class="form-control form-control-sm" name="end_date"
+                            value="{{ filters.end_date or '' }}" placeholder="Date fin" title="Date de fin">
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-sm btn-light" title="Filtrer">
+                            <i class="fas fa-filter"></i>
+                        </button>
+                        <a href="{{ url_for('settings.backups') }}" class="btn btn-sm btn-outline-light"
+                            title="Réinitialiser">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    </div>
+                </form>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nom du fichier</th>
+                                <th>Date de création</th>
+                                <th>Taille</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if backups %}
+                            {% for backup in backups %}
+                            <tr>
+                                <td><i class="fas fa-database text-secondary me-2"></i>{{ backup.filename }}</td>
+                                <td>{{ backup.created_at.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+                                <td>{{ backup.size_mb }} MB</td>
+                                <td class="text-end">
+                                    <div class="btn-group">
+                                        <form
+                                            action="{{ url_for('settings.restore_backup', filename=backup.filename) }}"
+                                            method="POST"
+                                            onsubmit="return confirm('ATTENTION: Cette action va écraser la base de données actuelle avec cette sauvegarde. Continuer ?');">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                            <button type="submit" class="btn btn-sm btn-outline-warning"
+                                                title="Restaurer">
+                                                <i class="fas fa-history"></i> Restaurer
+                                            </button>
+                                        </form>
+                                        <form action="{{ url_for('settings.delete_backup', filename=backup.filename) }}"
+                                            method="POST"
+                                            onsubmit="return confirm('Supprimer définitivement cette sauvegarde ?');"
+                                            class="ms-1">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                title="Supprimer">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center py-3 text-muted">Aucune sauvegarde trouvée.</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if pagination.pages > 1 %}
+                <div class="p-3 border-top">
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination pagination-sm justify-content-center mb-0">
+                            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                                <a class="page-link"
+                                    href="{{ url_for('settings.backups', page=pagination.page-1, start_date=filters.start_date, end_date=filters.end_date) }}"
+                                    aria-label="Précédent">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+
+                            {% for p in range(1, pagination.pages + 1) %}
+                            <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                                <a class="page-link"
+                                    href="{{ url_for('settings.backups', page=p, start_date=filters.start_date, end_date=filters.end_date) }}">{{
+                                    p }}</a>
+                            </li>
+                            {% endfor %}
+
+                            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                                <a class="page-link"
+                                    href="{{ url_for('settings.backups', page=pagination.page+1, start_date=filters.start_date, end_date=filters.end_date) }}"
+                                    aria-label="Suivant">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

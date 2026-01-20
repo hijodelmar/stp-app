@@ -1,0 +1,78 @@
+{% extends 'settings/base_settings.html' %}
+
+{% block settings_content %}
+<div class="row">
+    <div class="col-md-10 mx-auto">
+        <div class="card shadow-sm">
+            <div class="card-header bg-card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Gestion des Utilisateurs</h5>
+                <a href="{{ url_for('users.add') }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-user-plus me-1"></i> Nouveau
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Identifiant</th>
+                            <th>Rôle</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if users %}
+                        {% for user in users %}
+                        <tr>
+                            <td><strong>{{ user.username }}</strong></td>
+                            <td>
+                                {% for role in user.roles %}
+                                {% if role.name == 'admin' %}
+                                <span class="badge bg-danger">Administrateur</span>
+                                {% elif role.name == 'manager' %}
+                                <span class="badge bg-success">Manager</span>
+                                {% elif role.name == 'reporting' %}
+                                <span class="badge bg-secondary">Reporting</span>
+                                {% elif role.name == 'user_admin' %}
+                                <span class="badge bg-dark">Gestion Users</span>
+                                {% elif role.name == 'settings' %}
+                                <span class="badge bg-warning text-dark">Paramètres</span>
+                                {% elif 'admin' in role.name %}
+                                <span class="badge bg-primary">{{ role.name|replace('_admin', '')|title
+                                    }}</span>
+                                {% else %}
+                                <span class="badge bg-light text-dark">{{ role.name|title }}</span>
+                                {% endif %}
+                                {% else %}
+                                <span class="text-muted small">Aucun rôle</span>
+                                {% endfor %}
+                            </td>
+                            <td class="text-end">
+                                <a href="{{ url_for('users.edit', id=user.id) }}"
+                                    class="btn btn-sm btn-outline-secondary me-1">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% if user.id != current_user.id %}
+                                <form action="{{ url_for('users.delete', id=user.id) }}" method="POST" class="d-inline"
+                                    onsubmit="return confirm('Supprimer cet utilisateur ?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="3" class="text-center text-muted">Aucun utilisateur trouvé.
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
