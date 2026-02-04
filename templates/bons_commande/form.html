@@ -84,20 +84,29 @@
                             <div id="lignes-container">
                                 {% for ligne in form.lignes %}
                                 <div class="row mb-2 align-items-end ligne-item">
-                                    <div class="col-md-2" style="display: none;">
-                                        {{ ligne.category(class="form-select form-select-sm category-select") }}
+                                    <div class="col-md-2">
+                                        <label class="form-label small">Type</label>
+                                        <select class="form-select form-select-sm category-select"
+                                            name="{{ ligne.category.name }}">
+                                            <option value="fourniture" {% if ligne.category.data=='fourniture'
+                                                %}selected{% endif %}>Article</option>
+                                            <option value="texte_libre" {% if ligne.category.data=='texte_libre'
+                                                %}selected{% endif %}>Texte libre</option>
+                                        </select>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-4 designation-col">
                                         {{ ligne.designation.label(class="form-label small") }}
                                         {{ ligne.designation(class="form-control form-control-sm") }}
                                     </div>
-                                    <div class="col-md-2">
+                                    <div class="col-md-2 qte-wrapper">
                                         {{ ligne.quantite.label(class="form-label small") }}
-                                        {{ ligne.quantite(class="form-control form-control-sm text-end", step="1") }}
+                                        {{ ligne.quantite(class="form-control form-control-sm text-end qte-input",
+                                        step="1") }}
                                     </div>
-                                    <div class="col-md-2">
+                                    <div class="col-md-2 prix-wrapper">
                                         {{ ligne.prix_unitaire.label(class="form-label small") }}
-                                        {{ ligne.prix_unitaire(class="form-control form-control-sm text-end") }}
+                                        {{ ligne.prix_unitaire(class="form-control form-control-sm text-end prix-input")
+                                        }}
                                     </div>
                                     <div class="col-md-2">
                                         <button type="button" class="btn btn-sm btn-outline-danger w-100 remove-line"
@@ -111,9 +120,34 @@
                         </div>
                     </div>
 
-                    <div class="text-end">
-                        <button type="submit" class="btn btn-info btn-lg text-white">
-                            <i class="fas fa-save me-2"></i> Enregistrer
+                    <!-- Summary Section -->
+                    <div class="card mt-3">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8"></div>
+                                <div class="col-md-4">
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <td class="text-end"><strong>Total HT :</strong></td>
+                                            <td class="text-end" id="display-total-ht">0.00 €</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-end"><strong id="tva-label">TVA :</strong></td>
+                                            <td class="text-end" id="display-tva">0.00 €</td>
+                                        </tr>
+                                        <tr class="table-active">
+                                            <td class="text-end"><strong id="net-label">Net à Payer :</strong></td>
+                                            <td class="text-end" id="display-net-payer">0.00 €</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-end mt-4">
+                        <button type="submit" class="btn btn-info btn-lg text-white shadow-sm">
+                            <i class="fas fa-save me-2"></i> Enregistrer le Bon de Commande
                         </button>
                     </div>
                 </form>
@@ -124,23 +158,25 @@
 
 <div id="ligne-template" class="d-none">
     <div class="row mb-2 align-items-end ligne-item">
-        <div class="col-md-2" style="display: none;">
+        <div class="col-md-2">
+            <label class="form-label small">Type</label>
             <select class="form-select form-select-sm category-select" name="lignes-__index__-category">
-                <option value="fourniture" selected>Fourniture</option>
+                <option value="fourniture" selected>Article</option>
+                <option value="texte_libre">Texte libre</option>
             </select>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-4 designation-col">
             <label class="form-label small">Désignation</label>
             <input type="text" class="form-control form-control-sm" name="lignes-__index__-designation">
         </div>
-        <div class="col-md-2">
+        <div class="col-md-2 qte-wrapper">
             <label class="form-label small">Quantité</label>
-            <input type="number" step="0.01" class="form-control form-control-sm text-end"
+            <input type="number" step="0.01" class="form-control form-control-sm text-end qte-input"
                 name="lignes-__index__-quantite" value="1">
         </div>
-        <div class="col-md-2">
+        <div class="col-md-2 prix-wrapper">
             <label class="form-label small">Prix Unitaire</label>
-            <input type="number" step="0.01" class="form-control form-control-sm text-end"
+            <input type="number" step="0.01" class="form-control form-control-sm text-end prix-input"
                 name="lignes-__index__-prix_unitaire" value="0.0">
         </div>
         <div class="col-md-2">
@@ -151,12 +187,125 @@
     </div>
 </div>
 
+<!-- Quill Rich Text Editor -->
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        console.log("Bon de Commande Form - JS Init");
+
+        function calculateTotals() {
+            let totalHT = 0;
+            const rows = document.querySelectorAll('.ligne-item');
+
+            rows.forEach(row => {
+                const qteInput = row.querySelector('.qte-input');
+                const prixInput = row.querySelector('.prix-input');
+
+                if (qteInput && prixInput) {
+                    const qte = parseFloat(qteInput.value) || 0;
+                    const prix = parseFloat(prixInput.value) || 0;
+                    totalHT += qte * prix;
+                }
+            });
+
+            const autoliquid = document.getElementById('autoliquidation');
+            const tvaInput = document.getElementById('tva_rate');
+            let tvaPercent = tvaInput ? parseFloat(tvaInput.value) : 20.0;
+            let tvaRate = tvaPercent / 100.0;
+
+            if (autoliquid && autoliquid.checked) {
+                tvaRate = 0;
+            }
+
+            const tva = totalHT * tvaRate;
+            const totalNet = totalHT + tva;
+
+            const totalEl = document.getElementById('display-total-ht');
+            const tvaEl = document.getElementById('display-tva');
+            const netEl = document.getElementById('display-net-payer');
+
+            if (totalEl) totalEl.textContent = totalHT.toFixed(2) + ' €';
+            if (tvaEl) tvaEl.textContent = tva.toFixed(2) + ' €';
+            if (netEl) netEl.textContent = totalNet.toFixed(2) + ' €';
+
+            // Update Labels
+            const tvaLabel = document.getElementById('tva-label');
+            const netLabel = document.getElementById('net-label');
+            if (autoliquid && autoliquid.checked) {
+                if (tvaLabel) tvaLabel.textContent = "TVA (Autoliq) :";
+                if (netLabel) netLabel.textContent = "Net à Payer (HT) :";
+            } else {
+                if (tvaLabel) tvaLabel.textContent = `TVA (${tvaPercent}%) :`;
+                if (netLabel) netLabel.textContent = "Net à Payer (TTC) :";
+            }
+        }
+
+        function updateLineVisibility(row) {
+            const select = row.querySelector('.category-select');
+            const qteWrapper = row.querySelector('.qte-wrapper');
+            const prixWrapper = row.querySelector('.prix-wrapper');
+            const desCol = row.querySelector('.designation-col');
+            const desInput = desCol ? desCol.querySelector('input[name*="designation"]') : null;
+
+            if (!select || !qteWrapper || !prixWrapper || !desCol) return;
+
+            const category = select.value;
+
+            // Reset
+            qteWrapper.style.display = 'block';
+            prixWrapper.style.display = 'block';
+            desCol.className = 'col-md-4 designation-col'; // Reset to default width
+
+            // Destroy Quill if exists
+            if (row._quillInstance) {
+                const oldEditor = desCol.querySelector('.quill-editor-wrapper');
+                if (oldEditor) oldEditor.remove();
+                row._quillInstance = null;
+            }
+            if (desInput) desInput.style.display = 'block';
+
+            if (category === 'texte_libre') {
+                qteWrapper.style.display = 'none';
+                prixWrapper.style.display = 'none';
+                desCol.className = 'col-md-8 designation-col'; // Expand designation column
+
+                // Set default values to 0/1 to avoid calculation issues (even if hidden)
+                const qteIn = qteWrapper.querySelector('input');
+                const prixIn = prixWrapper.querySelector('input');
+                if (qteIn) qteIn.value = 1;
+                if (prixIn) prixIn.value = 0;
+
+                // Quill integration
+                if (desInput) {
+                    desInput.style.display = 'none'; // Hide the original input
+                    const editorContainer = document.createElement('div');
+                    editorContainer.className = 'quill-editor-wrapper mt-1';
+                    const editorDiv = document.createElement('div');
+                    editorDiv.style.height = '60px'; // Adjust height as needed
+                    editorContainer.appendChild(editorDiv);
+                    desCol.appendChild(editorContainer);
+
+                    const quill = new Quill(editorDiv, {
+                        theme: 'snow',
+                        modules: { toolbar: [['bold', 'underline'], [{ 'list': 'bullet' }]] },
+                        placeholder: 'Saisissez le texte libre...'
+                    });
+                    // Set initial content from the hidden input
+                    if (desInput.value) quill.root.innerHTML = desInput.value;
+                    // Update hidden input on text change
+                    quill.on('text-change', () => { desInput.value = quill.root.innerHTML; });
+                    row._quillInstance = quill; // Store Quill instance on the row element
+                }
+            }
+
+            calculateTotals();
+        }
+
         const autoliquidCheckbox = document.getElementById('autoliquidation');
         if (autoliquidCheckbox) {
             autoliquidCheckbox.addEventListener('change', calculateTotals);
-            // Also update input-group-text if needed? Maybe not.
         }
         const tvaRateInput = document.getElementById('tva_rate');
         if (tvaRateInput) {
@@ -165,11 +314,11 @@
 
         const container = document.getElementById('lignes-container');
         const addButton = document.getElementById('add-line');
-        const template = document.getElementById('ligne-template').innerHTML;
         let lineIndex = {{ form.lignes| length
     }};
 
     if (addButton && container) {
+        const template = document.getElementById('ligne-template').innerHTML;
         addButton.addEventListener('click', function () {
             const newHtml = template.replace(/__index__/g, lineIndex);
             const tempDiv = document.createElement('div');
@@ -177,6 +326,8 @@
             const newRow = tempDiv.firstElementChild;
             container.appendChild(newRow);
             lineIndex++;
+            updateLineVisibility(newRow); // Apply visibility logic to new row
+            calculateTotals();
         });
     }
 
@@ -186,12 +337,30 @@
                 const row = e.target.closest('.ligne-item');
                 if (document.querySelectorAll('.ligne-item').length > 1) {
                     row.remove();
+                    calculateTotals();
                 } else {
                     alert('Le document doit contenir au moins une ligne.');
                 }
             }
         });
+
+        container.addEventListener('input', function (e) {
+            if (e.target.name && (e.target.name.includes('quantite') || e.target.name.includes('prix_unitaire'))) {
+                calculateTotals();
+            }
+        });
+
+        // Listen for changes on category select to update line visibility
+        container.addEventListener('change', function (e) {
+            if (e.target.classList.contains('category-select')) {
+                updateLineVisibility(e.target.closest('.ligne-item'));
+            }
+        });
     }
+
+    // Initial setup for existing rows
+    document.querySelectorAll('.ligne-item').forEach(updateLineVisibility);
+    calculateTotals();
     });
 </script>
 {% endblock %}

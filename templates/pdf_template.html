@@ -318,7 +318,8 @@
             {% set ns = namespace(previous_category='') %}
             {% for l in document.lignes %}
             {# Add Fournitures header when first fourniture appears #}
-            {% if l.category == 'fourniture' and ns.previous_category != 'fourniture' %}
+            {% if l.category == 'fourniture' and ns.previous_category != 'fourniture' and document.type !=
+            'bon_de_commande' %}
             <tr>
                 <td colspan="4" style="border-bottom: 1px solid #000; padding-top: 8px;">
                     <b>Fournitures :</b>
